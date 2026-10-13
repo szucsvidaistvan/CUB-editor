@@ -3,33 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cube World .cub Editor (3D)</title>
+    <title>Cube World .cub Editor</title>
     <style>
         body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        h2 { margin: 5px 0; }
+        h2 { margin: 5px 0; font-size: 18px; }
         .toolbar { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
         button, label.btn { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
         button:hover, label.btn:hover { background: #444; }
         input[type="file"] { display: none; }
-        #canvas-container { width: 320px; height: 320px; border: 1px solid #444; background: #1e1e1e; position: relative; touch-action: none; }
+        #canvas-container { width: 100%; max-width: 360px; height: 360px; border: 1px solid #444; background: #1e1e1e; position: relative; touch-action: none; }
         canvas { display: block; width: 100%; height: 100%; }
-        .layer-info { margin: 5px 0; font-size: 14px; }
+        .info { margin: 5px 0; font-size: 13px; color: #aaa; text-align: center; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
-    <h2>Cube World .cub Editor (3D)</h2>
+    <h2>Cube World .cub Editor</h2>
     
     <div class="toolbar">
         <label class="btn">
-            Fájl Megnyitás <input type="file" id="fileInput" accept=".cub">
+            Megnyitás <input type="file" id="fileInput" accept=".cub">
         </label>
-        <button id="saveBtn">Mentés (.cub)</button>
+        <button id="modeBtn">Mód: Forgatás</button>
+        <button id="saveBtn">Mentés</button>
     </div>
 
-    <div class="layer-info" id="layerInfo">Modell betöltésre vár...</div>
+    <div class="info" id="layerInfo">Nyiss meg egy .cub fájlt!</div>
 
     <div id="canvas-container"></div>
 
@@ -39,7 +40,7 @@
         scene.background = new THREE.Color(0x1e1e1e);
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(25, 25, 25);
+        camera.position.set(40, 40, 40);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -51,39 +52,137 @@
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.7));
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(10, 20, 15);
+        dirLight.position.set(20, 40, 30);
         scene.add(dirLight);
 
         let voxelGroup = new THREE.Group();
         scene.add(voxelGroup);
 
-        // ** JAVÍTVA: Helyes geometria definíció **
+        let currentModel = {
+            sizeX: 0, sizeY: 0, sizeZ: 0,
+            data: null // Uint8Array vagy Array a színek tárolására
+        };
+
         const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+        let editMode = false; // false = forgatás, true = szerkesztés (kocka törlés/rakás)
 
-        function parseCubeWorld(buffer) {
-            const dataView = new DataView(buffer);
-            let offset = 0;
+        const modeBtn = document.getElementById('modeBtn');
+        modeBtn.addEventListener('click', () => {
+            editMode = !editMode;
+            controls.enabled = !editMode;
+            modeBtn.style.background = editMode ? '#4CAF50' : '#333';
+            modeBtn.innerText = editMode ? 'Mód: Szerkesztés' : 'Mód: Forgatás';
+        });
 
-            try {
-                while (offset < buffer.byteLength) {
-                    if (offset + 6 > buffer.byteLength) break;
-                    
-                    const x = dataView.getUint8(offset++);
-                    const y = dataView.getUint8(offset++);
-                    const z = dataView.getUint8(offset++);
-                    const r = dataView.getUint8(offset++);
-                    const g = dataView.getUint8(offset++);
-                    const b = dataView.getUint8(offset++);
-                    
-                    const mat = new THREE.MeshLambertMaterial({ color: (r << 16) | (g << 8) | b });
-                    const mesh = new THREE.Mesh(boxGeo, mat);
-                    mesh.position.set(x - 8, z - 8, y - 8);
-                    voxelGroup.add(mesh);
-                }
-            } catch (err) {
-                console.error("Hiba a fájl feldolgozása közben:", err);
+        function renderVoxels() {
+            while(voxelGroup.children.length > 0) {
+                voxelGroup.remove(voxelGroup.children[0]);
             }
+
+            if (!currentModel.data) return;
+
+            const { sizeX, sizeY, sizeZ, data } = currentModel;
+            const offsetX = sizeX / 2;
+            const offsetY = sizeY / 2;
+            const offsetZ = sizeZ / 2;
+
+            let index = 0;
+            for (let z = 0; z < sizeZ; z++) {
+                for (let y = 0; y < sizeY; y++) {
+                    for (let x = 0; x < sizeX; x++) {
+                        const r = data[index * 4];
+                        const g = data[index * 4 + 1];
+                        const b = data[index * 4 + 2];
+                        const a = data[index * 4 + 3];
+
+                        // Ha nem teljesen átlátszó (üres)
+                        if (a > 0) {
+                            const mat = new THREE.MeshLambertMaterial({ color: (r << 16) | (g << 8) | b });
+                            const mesh = new THREE.Mesh(boxGeo, mat);
+                            // Cube World koordináták igazítása
+                            mesh.position.set(x - offsetX + 0.5, z - offsetZ + 0.5, y - offsetY + 0.5);
+                            mesh.userData = { x, y, z, index };
+                            voxelGroup.add(mesh);
+                        }
+                        index++;
+                    }
+                }
+            }
+            document.getElementById('layerInfo.innerText = `Méret: ${sizeX}x${sizeY}x${sizeZ} | Voxelek: ${voxelGroup.children.length}`;');
         }
+
+        // Fájl beolvasás (.cub)
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const buffer = evt.target.result;
+                const view = new DataView(buffer);
+
+                if (buffer.byteLength < 12) {
+                    alert('Hibás fájlméret!');
+                    return;
+                }
+
+                currentModel.sizeX = view.getUint32(0, true);
+                currentModel.sizeY = view.getUint32(4, true);
+                currentModel.sizeZ = view.getUint32(8, true);
+
+                const expectedDataSize = currentModel.sizeX * currentModel.sizeY * currentModel.sizeZ * 4;
+                currentModel.data = new Uint8Array(buffer, 12, Math.min(expectedDataSize, buffer.byteLength - 12));
+
+                renderVoxels();
+                document.getElementById('layerInfo').innerText = `Betöltve: ${file.name} (${currentModel.sizeX}x${currentModel.sizeY}x${currentModel.sizeZ})`;
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Mentés (.cub formátumban)
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            if (!currentModel.data) {
+                alert('Nincs betöltött modell!');
+                return;
+            }
+            const header = new ArrayBuffer(12);
+            const view = new DataView(header);
+            view.setUint32(0, currentModel.sizeX, true);
+            view.setUint32(4, currentModel.sizeY, true);
+            view.setUint32(8, currentModel.sizeZ, true);
+
+            const blob = new Blob([header, currentModel.data], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'edited_model.cub';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Érintés / Kattintás kezelése szerkesztéshez
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        renderer.domElement.addEventListener('click', (e) => {
+            if (!editMode || !currentModel.data) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(voxelGroup.children);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                const voxelData = hit.object.userData;
+                
+                // Kocka törlése (Alpha = 0 állítása)
+                currentModel.data[voxelData.index * 4 + 3] = 0;
+                renderVoxels();
+            }
+        });
 
         function animate() {
             requestAnimationFrame(animate);
@@ -91,26 +190,6 @@
             renderer.render(scene, camera);
         }
         animate();
-
-        document.getElementById('fileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                while(voxelGroup.children.length > 0) {
-                    voxelGroup.remove(voxelGroup.children[0]);
-                }
-                
-                parseCubeWorld(evt.target.result);
-                document.getElementById('layerInfo').innerText = `Betöltve: ${file.name} (${voxelGroup.children.length} voxel)`;
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        document.getElementById('saveBtn').addEventListener('click', () => {
-            alert('Mentési funkció előkészítés alatt.');
-        });
     </script>
 </body>
 </html>
