@@ -50,8 +50,8 @@
         controls.enableDamping = true;
         controls.enableZoom = false;
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
         dirLight.position.set(20, 40, 30);
         scene.add(dirLight);
 
@@ -60,11 +60,12 @@
 
         let currentModel = {
             sizeX: 0, sizeY: 0, sizeZ: 0,
-            data: null // Uint8Array vagy Array a színek tárolására
+            buffer: null,
+            dataOffset: 0
         };
 
         const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-        let editMode = false; // false = forgatás, true = szerkesztés (kocka törlés/rakás)
+        let editMode = false;
 
         const modeBtn = document.getElementById('modeBtn');
         modeBtn.addEventListener('click', () => {
@@ -79,39 +80,49 @@
                 voxelGroup.remove(voxelGroup.children[0]);
             }
 
-            if (!currentModel.data) return;
+            if (!currentModel.buffer) return;
 
-            const { sizeX, sizeY, sizeZ, data } = currentModel;
+            const { sizeX, sizeY, sizeZ, buffer, dataOffset } = currentModel;
+            const view = new DataView(buffer);
+            
             const offsetX = sizeX / 2;
             const offsetY = sizeY / 2;
             const offsetZ = sizeZ / 2;
 
-            let index = 0;
+            let offset = dataOffset;
+            let voxelCount = 0;
+
+            // Cube World .cub struktúra: X, Y, Z iteráció vagy RGBA adatok
             for (let z = 0; z < sizeZ; z++) {
                 for (let y = 0; y < sizeY; y++) {
                     for (let x = 0; x < sizeX; x++) {
-                        const r = data[index * 4];
-                        const g = data[index * 4 + 1];
-                        const b = data[index * 4 + 2];
-                        const a = data[index * 4 + 3];
+                        if (offset + 4 > buffer.byteLength) break;
 
-                        // Ha nem teljesen átlátszó (üres)
-                        if (a > 0) {
+                        // Cube World színek általában BGRA vagy RGBA formátumúak
+                        const r = view.getUint8(offset);
+                        const g = view.getUint8(offset + 1);
+                        const b = view.getUint8(offset + 2);
+                        const a = view.getUint8(offset + 3);
+                        offset += 4;
+
+                        // Ha nem üres (az alpha nem 0)
+                        if (a > 0 || (r > 0 || g > 0 || b > 0)) {
+                            // Bizonyos fájloknál az alpha 0 is lehet, ha van szín, de itt szűrünk
                             const mat = new THREE.MeshLambertMaterial({ color: (r << 16) | (g << 8) | b });
                             const mesh = new THREE.Mesh(boxGeo, mat);
-                            // Cube World koordináták igazítása
+                            
+                            // Pontosabb középre igazítás a modell méretei alapján (pl. fegyvereknél mint a bow.cub)
                             mesh.position.set(x - offsetX + 0.5, z - offsetZ + 0.5, y - offsetY + 0.5);
-                            mesh.userData = { x, y, z, index };
+                            mesh.userData = { offset: offset - 4 };
                             voxelGroup.add(mesh);
+                            voxelCount++;
                         }
-                        index++;
                     }
                 }
             }
-            document.getElementById('layerInfo.innerText = `Méret: ${sizeX}x${sizeY}x${sizeZ} | Voxelek: ${voxelGroup.children.length}`;');
+            document.getElementById('layerInfo').innerText = `Méret: ${sizeX}x${sizeY}x${sizeZ} | Voxelek: ${voxelCount}`;
         }
 
-        // Fájl beolvasás (.cub)
         document.getElementById('fileInput').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -129,43 +140,33 @@
                 currentModel.sizeX = view.getUint32(0, true);
                 currentModel.sizeY = view.getUint32(4, true);
                 currentModel.sizeZ = view.getUint32(8, true);
-
-                const expectedDataSize = currentModel.sizeX * currentModel.sizeY * currentModel.sizeZ * 4;
-                currentModel.data = new Uint8Array(buffer, 12, Math.min(expectedDataSize, buffer.byteLength - 12));
+                currentModel.buffer = buffer;
+                currentModel.dataOffset = 12;
 
                 renderVoxels();
-                document.getElementById('layerInfo').innerText = `Betöltve: ${file.name} (${currentModel.sizeX}x${currentModel.sizeY}x${currentModel.sizeZ})`;
             };
             reader.readAsArrayBuffer(file);
         });
 
-        // Mentés (.cub formátumban)
         document.getElementById('saveBtn').addEventListener('click', () => {
-            if (!currentModel.data) {
+            if (!currentModel.buffer) {
                 alert('Nincs betöltött modell!');
                 return;
             }
-            const header = new ArrayBuffer(12);
-            const view = new DataView(header);
-            view.setUint32(0, currentModel.sizeX, true);
-            view.setUint32(4, currentModel.sizeY, true);
-            view.setUint32(8, currentModel.sizeZ, true);
-
-            const blob = new Blob([header, currentModel.data], { type: 'application/octet-stream' });
+            const blob = new Blob([currentModel.buffer], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'edited_model.cub';
+            a.download = 'edited_bow.cub';
             a.click();
             URL.revokeObjectURL(url);
         });
 
-        // Érintés / Kattintás kezelése szerkesztéshez
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
         renderer.domElement.addEventListener('click', (e) => {
-            if (!editMode || !currentModel.data) return;
+            if (!editMode || !currentModel.buffer) return;
 
             const rect = renderer.domElement.getBoundingClientRect();
             mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -176,10 +177,11 @@
 
             if (intersects.length > 0) {
                 const hit = intersects[0];
-                const voxelData = hit.object.userData;
+                const dataOffset = hit.object.userData.offset;
                 
-                // Kocka törlése (Alpha = 0 állítása)
-                currentModel.data[voxelData.index * 4 + 3] = 0;
+                // Alpha vagy szín nullázása (törlés)
+                const view = new DataView(currentModel.buffer);
+                view.setUint8(dataOffset + 3, 0); // Alpha = 0
                 renderVoxels();
             }
         });
