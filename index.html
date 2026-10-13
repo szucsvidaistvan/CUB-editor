@@ -61,7 +61,7 @@
         let currentModel = {
             sizeX: 0, sizeY: 0, sizeZ: 0,
             buffer: null,
-            dataOffset: 0
+            dataOffset: 12
         };
 
         const boxGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -85,6 +85,7 @@
             const { sizeX, sizeY, sizeZ, buffer, dataOffset } = currentModel;
             const view = new DataView(buffer);
             
+            // A voxel_mesher.gd és character_model.gd alapján számított középponti eltolás
             const offsetX = sizeX / 2;
             const offsetY = sizeY / 2;
             const offsetZ = sizeZ / 2;
@@ -92,26 +93,23 @@
             let offset = dataOffset;
             let voxelCount = 0;
 
-            // Cube World .cub struktúra: X, Y, Z iteráció vagy RGBA adatok
             for (let z = 0; z < sizeZ; z++) {
                 for (let y = 0; y < sizeY; y++) {
                     for (let x = 0; x < sizeX; x++) {
                         if (offset + 4 > buffer.byteLength) break;
 
-                        // Cube World színek általában BGRA vagy RGBA formátumúak
                         const r = view.getUint8(offset);
                         const g = view.getUint8(offset + 1);
                         const b = view.getUint8(offset + 2);
                         const a = view.getUint8(offset + 3);
                         offset += 4;
 
-                        // Ha nem üres (az alpha nem 0)
+                        // Megjelenítjük, ha nem teljesen átlátszó vagy van színe
                         if (a > 0 || (r > 0 || g > 0 || b > 0)) {
-                            // Bizonyos fájloknál az alpha 0 is lehet, ha van szín, de itt szűrünk
                             const mat = new THREE.MeshLambertMaterial({ color: (r << 16) | (g << 8) | b });
                             const mesh = new THREE.Mesh(boxGeo, mat);
                             
-                            // Pontosabb középre igazítás a modell méretei alapján (pl. fegyvereknél mint a bow.cub)
+                            // Pontos térbeli illesztés a Cube World szabvány szerint
                             mesh.position.set(x - offsetX + 0.5, z - offsetZ + 0.5, y - offsetY + 0.5);
                             mesh.userData = { offset: offset - 4 };
                             voxelGroup.add(mesh);
@@ -157,7 +155,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'edited_bow.cub';
+            a.download = 'edited_model.cub';
             a.click();
             URL.revokeObjectURL(url);
         });
@@ -179,9 +177,9 @@
                 const hit = intersects[0];
                 const dataOffset = hit.object.userData.offset;
                 
-                // Alpha vagy szín nullázása (törlés)
+                // Alpha csatorna nullázása (kocka törlése)
                 const view = new DataView(currentModel.buffer);
-                view.setUint8(dataOffset + 3, 0); // Alpha = 0
+                view.setUint8(dataOffset + 3, 0); 
                 renderVoxels();
             }
         });
