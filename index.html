@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cube World .cub Editor</title>
+    <title>Cube World .cub Canvas Editor</title>
     <style>
         body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         h2 { margin: 5px 0; font-size: 18px; }
@@ -11,127 +11,73 @@
         button, label.btn { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
         button:hover, label.btn:hover { background: #444; }
         input[type="file"] { display: none; }
-        #canvas-container { width: 100%; max-width: 360px; height: 360px; border: 1px solid #444; background: #1e1e1e; position: relative; touch-action: none; }
+        #canvasContainer { width: 360px; height: 360px; border: 1px solid #444; background: #1e1e1e; position: relative; touch-action: none; }
         canvas { display: block; width: 100%; height: 100%; }
         .info { margin: 5px 0; font-size: 13px; color: #aaa; text-align: center; }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
-    <h2>Cube World .cub Editor</h2>
+    <h2>Cube World .cub Editor (Canvas)</h2>
     
     <div class="toolbar">
         <label class="btn">
             Megnyitás <input type="file" id="fileInput" accept=".cub">
         </label>
-        <button id="modeBtn">Mód: Forgatás</button>
+        <button id="viewBtn">Nézet: 3D Izometrikus</button>
         <button id="saveBtn">Mentés</button>
     </div>
 
-    <div class="info" id="layerInfo">Nyiss meg egy .cub fájlt!</div>
+    <div class="info" id="infoText">Nyiss meg egy .cub fájlt!</div>
 
-    <div id="canvas-container"></div>
+    <div id="canvasContainer">
+        <canvas id="editorCanvas" width="360" height="360"></canvas>
+    </div>
+
+    <div class="toolbar" id="sliceControls" style="display: none;">
+        <button id="prevLayer">&larr; Előző réteg</button>
+        <span id="layerInfo" style="line-height: 30px;">Z: 1/1</span>
+        <button id="nextLayer">Következő réteg &rarr;</button>
+    </div>
 
     <script>
-        const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1e1e1e);
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const infoText = document.getElementById('infoText');
+        const viewBtn = document.getElementById('viewBtn');
+        const sliceControls = document.getElementById('sliceControls');
+        const layerInfo = document.getElementById('layerInfo');
 
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(30, 30, 30);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        container.appendChild(renderer.domElement);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.enableZoom = false;
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        dirLight.position.set(20, 40, 30);
-        scene.add(dirLight);
-
-        let voxelGroup = new THREE.Group();
-        scene.add(voxelGroup);
-
-        let currentModel = {
-            sizeX: 0, sizeY: 0, sizeZ: 0,
+        let model = {
+            sizeX: 0,
+            sizeY: 0,
+            sizeZ: 0,
             buffer: null,
             dataOffset: 12
         };
 
-        const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-        let editMode = false;
+        let is3DView = true;
+        let currentZ = 0;
 
-        const modeBtn = document.getElementById('modeBtn');
-        modeBtn.addEventListener('click', () => {
-            editMode = !editMode;
-            controls.enabled = !editMode;
-            modeBtn.style.background = editMode ? '#4CAF50' : '#333';
-            modeBtn.innerText = editMode ? 'Mód: Szerkesztés' : 'Mód: Forgatás';
+        viewBtn.addEventListener('click', () => {
+            is3DView = !is3DView;
+            viewBtn.innerText = is3DView ? 'Nézet: 3D Izometrikus' : 'Nézet: 2D Szelet';
+            sliceControls.style.display = is3DView ? 'none' : 'flex';
+            render();
         });
 
-        function renderVoxels() {
-            while(voxelGroup.children.length > 0) {
-                voxelGroup.remove(voxelGroup.children[0]);
-            }
+        document.getElementById('prevLayer').addEventListener('click', () => {
+            if (currentZ > 0) { currentZ--; render(); }
+        });
 
-            if (!currentModel.buffer) return;
-
-            const { sizeX, sizeY, sizeZ, buffer, dataOffset } = currentModel;
-            const view = new DataView(buffer);
-            
-            const offsetX = sizeX / 2;
-            const offsetY = sizeY / 2;
-            const offsetZ = sizeZ / 2;
-
-            let offset = dataOffset;
-            let voxelCount = 0;
-
-            for (let z = 0; z < sizeZ; z++) {
-                for (let y = 0; y < sizeY; y++) {
-                    for (let x = 0; x < sizeX; x++) {
-                        if (offset + 4 > buffer.byteLength) break;
-
-                        // Cube World színcsatornák korrigált (BGRA / ARGB / RGBA) olvasása
-                        // Próbáljuk meg a standard BGRA sorrendet (amit a legtöbb Cube World tool használ)
-                        const b = view.getUint8(offset);
-                        const g = view.getUint8(offset + 1);
-                        const r = view.getUint8(offset + 2);
-                        const a = view.getUint8(offset + 3);
-                        offset += 4;
-
-                        // Ha az Alpha nem 0 (vagyis nem teljesen átlátszó), akkor rajzoljuk
-                        if (a > 0) {
-                            const mat = new THREE.MeshLambertMaterial({ color: (r << 16) | (g << 8) | b });
-                            const mesh = new THREE.Mesh(boxGeo, mat);
-                            
-                            mesh.position.set(x - offsetX + 0.5, z - offsetZ + 0.5, y - offsetY + 0.5);
-                            mesh.userData = { offset: offset - 4 };
-                            voxelGroup.add(mesh);
-                            voxelCount++;
-                        }
-                    }
-                }
-            }
-
-            // Automatikus kamera távolság beállítás a modell mérete alapján
-            const maxDim = Math.max(sizeX, sizeY, sizeZ);
-            camera.position.set(maxDim * 1.8, maxDim * 1.8, maxDim * 1.8);
-            controls.target.set(0, 0, 0);
-            controls.update();
-
-            document.getElementById('layerInfo').innerText = `Méret: ${sizeX}x${sizeY}x${sizeZ} | Voxelek: ${voxelCount}`;
-        }
+        document.getElementById('nextLayer').addEventListener('click', () => {
+            if (currentZ < model.sizeZ - 1) { currentZ++; render(); }
+        });
 
         document.getElementById('fileInput').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
             reader.onload = function(evt) {
                 const buffer = evt.target.result;
@@ -142,23 +88,113 @@
                     return;
                 }
 
-                currentModel.sizeX = view.getUint32(0, true);
-                currentModel.sizeY = view.getUint32(4, true);
-                currentModel.sizeZ = view.getUint32(8, true);
-                currentModel.buffer = buffer;
-                currentModel.dataOffset = 12;
+                model.sizeX = view.getUint32(0, true);
+                model.sizeY = view.getUint32(4, true);
+                model.sizeZ = view.getUint32(8, true);
+                model.buffer = buffer;
+                model.dataOffset = 12;
+                currentZ = 0;
 
-                renderVoxels();
+                infoText.innerText = `Betöltve: ${file.name} (${model.sizeX}x${model.sizeY}x${model.sizeZ})`;
+                render();
             };
             reader.readAsArrayBuffer(file);
         });
 
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!model.buffer) return;
+
+            if (is3DView) {
+                renderIsometric();
+            } else {
+                renderSlice(currentZ);
+            }
+        }
+
+        // Saját izometrikus kirajzolás a helyes színekkel (RGB)
+        function renderIsometric() {
+            const { sizeX, sizeY, sizeZ, buffer, dataOffset } = model;
+            const view = new DataView(buffer);
+
+            let offset = dataOffset;
+            const voxels = [];
+
+            for (let z = 0; z < sizeZ; z++) {
+                for (let y = 0; y < sizeY; y++) {
+                    for (let x = 0; x < sizeX; x++) {
+                        if (offset + 4 > buffer.byteLength) break;
+                        const r = view.getUint8(offset);
+                        const g = view.getUint8(offset + 1);
+                        const b = view.getUint8(offset + 2);
+                        const a = view.getUint8(offset + 3);
+                        offset += 4;
+
+                        if (a > 0) {
+                            voxels.push({ x, y, z, r, g, b });
+                        }
+                    }
+                }
+            }
+
+            // Egyszerű izometrikus kivetítés képernyőre
+            const scale = Math.min(canvas.width / (sizeX + sizeY + 4), canvas.height / (sizeZ + sizeX + 4)) * 1.5;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + sizeZ * scale * 0.3;
+
+            // Visszafelé rajzolás (Painter's algorithm a helyes takarásért)
+            voxels.sort((v1, v2) => (v1.x + v1.y + v1.z) - (v2.x + v2.y + v2.z));
+
+            voxels.forEach(v => {
+                const isoX = centerX + (v.x - v.y) * (scale * 0.7);
+                const isoY = centerY + (v.x + v.y) * (scale * 0.35) - (v.z * scale * 0.7);
+
+                ctx.fillStyle = `rgb(${v.r}, ${v.g}, ${v.b})`;
+                ctx.fillRect(isoX, isoY, scale * 0.7, scale * 0.7);
+            });
+        }
+
+        // 2D szelet nézet szerkesztéshez
+        function renderSlice(z) {
+            const { sizeX, sizeY, buffer, dataOffset } = model;
+            const view = new DataView(buffer);
+
+            const cellSize = Math.min(canvas.width / sizeX, canvas.height / sizeY) * 0.8;
+            const offsetX = (canvas.width - sizeX * cellSize) / 2;
+            const offsetY = (canvas.height - sizeY * cellSize) / 2;
+
+            layerInfo.innerText = `Z réteg: ${z + 1} / ${model.sizeZ}`;
+
+            for (let y = 0; y < sizeY; y++) {
+                for (let x = 0; x < sizeX; x++) {
+                    // Kiszámoljuk az adott voxel pozícióját a bufferben
+                    const index = (z * sizeY * sizeX) + (y * sizeX) + x;
+                    const bytePos = dataOffset + index * 4;
+
+                    if (bytePos + 4 > buffer.byteLength) continue;
+
+                    const r = view.getUint8(bytePos);
+                    const g = view.getUint8(bytePos + 1);
+                    const b = view.getUint8(bytePos + 2);
+                    const a = view.getUint8(bytePos + 3);
+
+                    if (a > 0) {
+                        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    } else {
+                        ctx.fillStyle = '#222';
+                    }
+
+                    ctx.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize - 1, cellSize - 1);
+                }
+            }
+        }
+
         document.getElementById('saveBtn').addEventListener('click', () => {
-            if (!currentModel.buffer) {
+            if (!model.buffer) {
                 alert('Nincs betöltött modell!');
                 return;
             }
-            const blob = new Blob([currentModel.buffer], { type: 'application/octet-stream' });
+            const blob = new Blob([model.buffer], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -166,37 +202,6 @@
             a.click();
             URL.revokeObjectURL(url);
         });
-
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        renderer.domElement.addEventListener('click', (e) => {
-            if (!editMode || !currentModel.buffer) return;
-
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(voxelGroup.children);
-
-            if (intersects.length > 0) {
-                const hit = intersects[0];
-                const dataOffset = hit.object.userData.offset;
-                
-                // Alpha csatorna nullázása (törlés)
-                const view = new DataView(currentModel.buffer);
-                view.setUint8(dataOffset + 3, 0); 
-                renderVoxels();
-            }
-        });
-
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        animate();
     </script>
 </body>
 </html>
