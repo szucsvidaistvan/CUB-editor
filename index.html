@@ -15,7 +15,6 @@
         canvas { display: block; width: 100%; height: 100%; }
         .layer-info { margin: 5px 0; font-size: 14px; }
     </style>
-    <!-- Three.js és OrbitControls CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
@@ -30,15 +29,11 @@
         <button id="saveBtn">Mentés (.cub)</button>
     </div>
 
-    <div class="layer-info" id="layerInfo">3D Forgatható Modell (Zoom tiltva)</div>
+    <div class="layer-info" id="layerInfo">Modell betöltésre vár...</div>
 
     <div id="canvas-container"></div>
 
     <script>
-        const SIZE = 16;
-        let voxels = new Uint8Array(SIZE * SIZE * SIZE);
-
-        // Three.js alapok
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1e1e1e);
@@ -52,42 +47,41 @@
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.enableZoom = false; // <-- Itt tiltottuk le a zoomolást
+        controls.enableZoom = false;
 
-        // Világítás
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(10, 20, 15);
-        scene.add(directionalLight);
-
-        // Voxelháló csoport tárolására
         let voxelGroup = new THREE.Group();
         scene.add(voxelGroup);
 
-        const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-        const boxMat = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
+        const boxGeo = new ScalarBoxGeo = new THREE.BoxGeometry(1, 1, 1);
 
-        function update3DScene() {
-            // Előző kockák törlése
-            while(voxelGroup.children.length > 0){ 
-                voxelGroup.remove(voxelGroup.children[0]); 
-            }
+        // Cube World .cub parser (Egyszerűsített bináris olvasó színkezeléssel)
+        function parseCubeWorld(buffer) {
+            const dataView = new DataView(buffer);
+            let offset = 0;
 
-            const offset = SIZE / 2;
-
-            for (let z = 0; z < SIZE; z++) {
-                for (let y = 0; y < SIZE; y++) {
-                    for (let x = 0; x < SIZE; x++) {
-                        const index = x + y * SIZE + z * SIZE * SIZE;
-                        if (voxels[index] > 0) {
-                            const mesh = new THREE.Mesh(boxGeo, boxMat);
-                            mesh.position.set(x - offset + 0.5, z - offset + 0.5, y - offset + 0.5);
-                            voxelGroup.add(mesh);
-                        }
-                    }
-                }
+            // Cube World fájlok általában tartalmazzák a méreteket vagy egy fix struktúrát
+            // Ha a fájl byte-jai tartalmazzák a színeket (R, G, B, A vagy X, Y, Z, R, G, B)
+            while (offset < buffer.byteLength) {
+                if (offset + 4 > buffer.byteLength) break;
+                
+                // Példa struktúra feldolgozás iterációra
+                const x = dataView.getUint8(offset++);
+                const y = dataView.getUint8(offset++);
+                const z = dataView.getUint8(offset++);
+                const r = dataView.getUint8(offset++);
+                const g = dataView.getUint8(offset++);
+                const b = dataView.getUint8(offset++);
+                
+                // Létrehozzuk a színes kockát a megfelelő helyen
+                const mat = new THREE.MeshLambertMaterial({ color: (r << 16) | (g << 8) | b });
+                const mesh = new THREE.Mesh(boxGeo, mat);
+                mesh.position.set(x - 8, z - 8, y - 8);
+                voxelGroup.add(mesh);
             }
         }
 
@@ -98,33 +92,25 @@
         }
         animate();
 
-        // Fájl betöltés
         document.getElementById('fileInput').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
+            
             const reader = new FileReader();
             reader.onload = function(evt) {
-                const buffer = new Uint8Array(evt.target.result);
-                const len = Math.min(buffer.length, voxels.length);
-                voxels.set(buffer.subarray(0, len));
-                update3DScene();
+                while(voxelGroup.children.length > 0) {
+                    voxelGroup.remove(voxelGroup.children[0]);
+                }
+                
+                parseCubeWorld(evt.target.result);
+                document.getElementById('layerInfo').innerText = `Betöltve: ${file.name} (${voxelGroup.children.length} voxel)`;
             };
             reader.readAsArrayBuffer(file);
         });
 
-        // Fájl mentés
         document.getElementById('saveBtn').addEventListener('click', () => {
-            const blob = new Blob([voxels], { type: 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'model_edited.cub';
-            a.click();
-            URL.revokeObjectURL(url);
+            alert('Mentési funkció előkészítés alatt.');
         });
-
-        // Kezdeti üres generálás
-        update3DScene();
     </script>
 </body>
 </html>
