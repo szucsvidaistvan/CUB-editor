@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cube World .cub Editor</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        h0, h2 { margin: 5px 0; }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
+        button, label.btn { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover, label.btn:hover { background: #444; }
+        input[type="file"] { display: none; }
+        canvas { background: #1e1e1e; border: 1px solid #444; touch-action: none; max-width: 100%; }
+        #view-container { position: relative; }
+        .layer-info { margin: 5px 0; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <h2>Cube World .cub Editor</h2>
+    
+    <div class="toolbar">
+        <label class="btn">
+            Fájl Megnyitás <input type="file" id="fileInput" accept=".cub">
+        </label>
+        <button id="toggleBtn">3D Nézet</button>
+        <button id="saveBtn">Mentés (.cub)</button>
+    </div>
+
+    <div class="layer-info" id="layerInfo">Réteg: Z = 0 / 16</div>
+
+    <div id="view-container">
+        <canvas id="editorCanvas" width="320" height="320"></canvas>
+    </div>
+
+    <div class="toolbar" id="sliceControls">
+        <button id="prevLayer">Előző réteg (-)</button>
+        <button id="nextLayer">Következő réteg (+)</button>
+    </div>
+
+    <script>
+        // Egyszerű 16x16x16 voxel rács reprezentáció alapértelmezett adatokkal
+        const SIZE = 16;
+        let voxels = new Uint8Array(SIZE * SIZE * SIZE); // 0 = üres, egyéb = színkód
+        let currentZ = 0;
+        let is3DMode = false;
+
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const layerInfo = document.getElementById('layerInfo');
+        const sliceControls = document.getElementById('sliceControls');
+        const toggleBtn = document.getElementById('toggleBtn');
+
+        // Egyszerű 2D rács kirajzolás
+        function draw2D() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cellSize = canvas.width / SIZE;
+
+            for (let y = 0; y < SIZE; y++) {
+                for (let x = 0; x < SIZE; x++) {
+                    const index = x + y * SIZE + currentZ * SIZE * SIZE;
+                    const val = voxels[index];
+
+                    ctx.fillStyle = val > 0 ? '#4CAF50' : '#222';
+                    ctx.fillRect(x * cellSize, y * cellSize, cellSize - 1, cellSize - 1);
+                }
+            }
+            layerInfo.innerText = `Réteg (Z): ${currentZ + 1} / ${SIZE}`;
+        }
+
+        // Egyszerű 3D izometrikus / drótvázas kivetítés böngészőben külső lib nélkül
+        function draw3D() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#aaa';
+            ctx.font = '14px sans-serif';
+            ctx.fillText('3D Mód (Forgatás / Nézet)', 10, 25);
+
+            const cellSize = canvas.width / (SIZE * 1.5);
+            const offsetX = canvas.width / 2;
+            const offsetY = canvas.height / 2;
+
+            for (let z = 0; z < SIZE; z++) {
+                for (let y = 0; y < SIZE; y++) {
+                    for (let x = 0; x < SIZE; x++) {
+                        const index = x + y * SIZE + z * SIZE * SIZE;
+                        if (voxels[index] > 0) {
+                            // Izometrikus képlet
+                            const isoX = offsetX + (x - y) * (cellSize * 0.8);
+                            const isoY = offsetY + (x + y) * (cellSize * 0.4) - (z * cellSize * 0.8);
+
+                            ctx.fillStyle = '#4CAF50';
+                            ctx.fillRect(isoX, isoY, cellSize * 0.8, cellSize * 0.8);
+                        }
+                    }
+                }
+            }
+            layerInfo.innerText = '3D Izometrikus Előnézet';
+        }
+
+        function redraw() {
+            if (is3DMode) {
+                draw3D();
+            } else {
+                draw2D();
+            }
+        }
+
+        // Rajzolás / Voxel módosítás egérrel vagy érintéssel
+        canvas.addEventListener('click', (e) => {
+            if (is3DMode) return; // 3D módban csak nézet
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor(((e.clientX - rect.left) / canvas.clientWidth) * SIZE);
+            const y = Math.floor(((e.clientY - rect.top) / canvas.clientHeight) * SIZE);
+
+            if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
+                const index = x + y * SIZE + currentZ * SIZE * SIZE;
+                voxels[index] = voxels[index] > 0 ? 0 : 1; // ki/bekapcsolás
+                redraw();
+            }
+        });
+
+        // Váltás 2D és 3D között
+        toggleBtn.addEventListener('click', () => {
+            is3DMode = !is3DMode;
+            toggleBtn.innerText = is3DMode ? '2D Szerkesztő' : '3D Nézet';
+            sliceControls.style.display = is3DMode ? 'none' : 'flex';
+            redraw();
+        });
+
+        document.getElementById('prevLayer').addEventListener('click', () => {
+            if (currentZ > 0) { currentZ--; redraw(); }
+        });
+
+        document.getElementById('nextLayer').addEventListener('click', () => {
+            if (currentZ < SIZE - 1) { currentZ++; redraw(); }
+        });
+
+        // Fájl betöltése
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const buffer = new Uint8Array(evt.target.result);
+                // Egyszerű betöltési logika (ha kisebb/nagyobb, beillesztjük ameddig lehet)
+                const len = Math.min(buffer.length, voxels.length);
+                voxels.set(buffer.subarray(0, len));
+                redraw();
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Fájl mentése
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const blob = new Blob([voxels], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'model_edited.cub';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Kezdeti kirajzolás
+        redraw();
+    </script>
+</body>
+</html>
