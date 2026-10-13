@@ -1,207 +1,149 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hu">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cube World .cub Canvas Editor</title>
-    <style>
-        body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        h2 { margin: 5px 0; font-size: 18px; }
-        .toolbar { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
-        button, label.btn { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        button:hover, label.btn:hover { background: #444; }
-        input[type="file"] { display: none; }
-        #canvasContainer { width: 360px; height: 360px; border: 1px solid #444; background: #1e1e1e; position: relative; touch-action: none; }
-        canvas { display: block; width: 100%; height: 100%; }
-        .info { margin: 5px 0; font-size: 13px; color: #aaa; text-align: center; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Cube World .cub 3D Editor</title>
+<style>
+:root{color-scheme:dark;--bg:#121212;--panel:#202020;--line:#444;--accent:#6fc8ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#f5f5f5;font:16px system-ui,-apple-system,sans-serif}
+main{max-width:900px;margin:auto;padding:14px}
+h1{font-size:1.35rem;text-align:center;margin:8px 0 14px}
+.toolbar,.editbar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+button,.filelabel{border:1px solid #555;border-radius:8px;background:#303030;color:#fff;padding:11px 14px;font:inherit;cursor:pointer}
+button:active,.filelabel:active{background:#454545}
+input[type=file]{display:none}
+#stage{height:min(62vh,560px);min-height:320px;border:1px solid #444;border-radius:10px;overflow:hidden;background:#1c1c1c;touch-action:none}
+#stage canvas{display:block;width:100%;height:100%}
+.info{text-align:center;color:#bbb;font-size:.9rem;margin:9px 0}
+.panel{background:var(--panel);border:1px solid #383838;border-radius:10px;padding:12px;margin-top:12px}
+.panel h2{font-size:1rem;margin:0 0 8px}
+.controls{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+input[type=color]{width:48px;height:42px;padding:2px;border:1px solid #555;border-radius:7px;background:#222}
+input[type=range]{width:min(240px,60vw)}
+small{color:#aaa;display:block;line-height:1.5;margin-top:8px}
+#status{min-height:1.4em}
+button:disabled{opacity:.45;cursor:not-allowed}
+</style>
 </head>
 <body>
+<main>
+<h1>Cube World .cub 3D Editor</h1>
+<div class="toolbar">
+<label class="filelabel">.cub megnyitÃ¡sa<input id="fileInput" type="file" accept=".cub,application/octet-stream"></label>
+<button id="saveBtn" disabled>MentÃ©s .cub fÃ¡jlkÃ©nt</button>
+<button id="resetViewBtn">NÃ©zet visszaÃ¡llÃ­tÃ¡sa</button>
+</div>
+<div class="info" id="info">Nyiss meg egy .cub fÃ¡jlt a 3D modell megjelenÃ­tÃ©sÃ©hez.</div>
+<div id="stage" aria-label="ForgathatÃ³ 3D modell"></div>
+<div class="panel">
+<h2>Voxel szerkesztÃ©se</h2>
+<div class="controls">
+<label for="colorPicker">SzÃ­n</label><input id="colorPicker" type="color" value="#d6a56f" disabled>
+<button id="paintBtn" disabled>SzÃ­n alkalmazÃ¡sa</button>
+<button id="eraseBtn" disabled>Voxel tÃ¶rlÃ©se</button>
+<button id="restoreBtn" disabled>Voxel visszaÃ¡llÃ­tÃ¡sa</button>
+</div>
+<div class="info" id="selectedInfo">Koppints egy kockÃ¡ra a kijelÃ¶lÃ©shez.</div>
+<small>Telefonon egy ujjal forgasd a modellt, kÃ©t ujjal nagyÃ­ts/kicsinyÃ­ts. Koppints egy voxelre, majd vÃ¡lassz szÃ­nt, tÃ¶rlÃ©st vagy visszaÃ¡llÃ­tÃ¡st. SzÃ¡mÃ­tÃ³gÃ©pen az egÃ©rrel forgathatÃ³, a gÃ¶rgÅvel nagyÃ­thatÃ³.</small>
+</div>
+<div class="info" id="status" role="status"></div>
+</main>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
-    <h2>Cube World .cub Editor (Canvas)</h2>
-    
-    <div class="toolbar">
-        <label class="btn">
-            Megnyitás <input type="file" id="fileInput" accept=".cub">
-        </label>
-        <button id="viewBtn">Nézet: 3D Izometrikus</button>
-        <button id="saveBtn">Mentés</button>
-    </div>
+const stage=document.querySelector('#stage'), info=document.querySelector('#info'), status=document.querySelector('#status');
+const fileInput=document.querySelector('#fileInput'), saveBtn=document.querySelector('#saveBtn');
+const colorPicker=document.querySelector('#colorPicker'), paintBtn=document.querySelector('#paintBtn'), eraseBtn=document.querySelector('#eraseBtn'), restoreBtn=document.querySelector('#restoreBtn'), selectedInfo=document.querySelector('#selectedInfo');
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x1c1c1c);
+const camera=new THREE.PerspectiveCamera(45,1,0.1,2000); camera.position.set(30,30,40);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputColorSpace=THREE.SRGBColorSpace; stage.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.08; controls.target.set(0,0,0);
+scene.add(new THREE.HemisphereLight(0xffffff,0x777788,2));
+const keyLight=new THREE.DirectionalLight(0xffffff,2.2); keyLight.position.set(20,35,25); scene.add(keyLight);
+const fillLight=new THREE.DirectionalLight(0xffffff,1); fillLight.position.set(-20,10,-25); scene.add(fillLight);
+const grid=new THREE.GridHelper(40,40,0x444444,0x303030); grid.position.y=-0.5; scene.add(grid);
+const group=new THREE.Group(); scene.add(group);
+const raycaster=new THREE.Raycaster(), pointer=new THREE.Vector2();
+let model=null, selected=null, voxelMeshes=new Map(), originalBytes=null, fileName='model.cub';
+const cubeGeometry=new THREE.BoxGeometry(0.96,0.96,0.96);
+const key=(x,y,z)=>`${x},${y},${z}`;
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage); resize();
+function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)} animate();
 
-    <div class="info" id="infoText">Nyiss meg egy .cub fájlt!</div>
-
-    <div id="canvasContainer">
-        <canvas id="editorCanvas" width="360" height="360"></canvas>
-    </div>
-
-    <div class="toolbar" id="sliceControls" style="display: none;">
-        <button id="prevLayer">&larr; Előző réteg</button>
-        <span id="layerInfo" style="line-height: 30px;">Z: 1/1</span>
-        <button id="nextLayer">Következő réteg &rarr;</button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('editorCanvas');
-        const ctx = canvas.getContext('2d');
-        const infoText = document.getElementById('infoText');
-        const viewBtn = document.getElementById('viewBtn');
-        const sliceControls = document.getElementById('sliceControls');
-        const layerInfo = document.getElementById('layerInfo');
-
-        let model = {
-            sizeX: 0,
-            sizeY: 0,
-            sizeZ: 0,
-            buffer: null,
-            dataOffset: 12
-        };
-
-        let is3DView = true;
-        let currentZ = 0;
-
-        viewBtn.addEventListener('click', () => {
-            is3DView = !is3DView;
-            viewBtn.innerText = is3DView ? 'Nézet: 3D Izometrikus' : 'Nézet: 2D Szelet';
-            sliceControls.style.display = is3DView ? 'none' : 'flex';
-            render();
-        });
-
-        document.getElementById('prevLayer').addEventListener('click', () => {
-            if (currentZ > 0) { currentZ--; render(); }
-        });
-
-        document.getElementById('nextLayer').addEventListener('click', () => {
-            if (currentZ < model.sizeZ - 1) { currentZ++; render(); }
-        });
-
-        document.getElementById('fileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const buffer = evt.target.result;
-                const view = new DataView(buffer);
-
-                if (buffer.byteLength < 12) {
-                    alert('Hibás fájlméret!');
-                    return;
-                }
-
-                model.sizeX = view.getUint32(0, true);
-                model.sizeY = view.getUint32(4, true);
-                model.sizeZ = view.getUint32(8, true);
-                model.buffer = buffer;
-                model.dataOffset = 12;
-                currentZ = 0;
-
-                infoText.innerText = `Betöltve: ${file.name} (${model.sizeX}x${model.sizeY}x${model.sizeZ})`;
-                render();
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (!model.buffer) return;
-
-            if (is3DView) {
-                renderIsometric();
-            } else {
-                renderSlice(currentZ);
-            }
-        }
-
-        // Saját izometrikus kirajzolás a helyes színekkel (RGB)
-        function renderIsometric() {
-            const { sizeX, sizeY, sizeZ, buffer, dataOffset } = model;
-            const view = new DataView(buffer);
-
-            let offset = dataOffset;
-            const voxels = [];
-
-            for (let z = 0; z < sizeZ; z++) {
-                for (let y = 0; y < sizeY; y++) {
-                    for (let x = 0; x < sizeX; x++) {
-                        if (offset + 4 > buffer.byteLength) break;
-                        const r = view.getUint8(offset);
-                        const g = view.getUint8(offset + 1);
-                        const b = view.getUint8(offset + 2);
-                        const a = view.getUint8(offset + 3);
-                        offset += 4;
-
-                        if (a > 0) {
-                            voxels.push({ x, y, z, r, g, b });
-                        }
-                    }
-                }
-            }
-
-            // Egyszerű izometrikus kivetítés képernyőre
-            const scale = Math.min(canvas.width / (sizeX + sizeY + 4), canvas.height / (sizeZ + sizeX + 4)) * 1.5;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2 + sizeZ * scale * 0.3;
-
-            // Visszafelé rajzolás (Painter's algorithm a helyes takarásért)
-            voxels.sort((v1, v2) => (v1.x + v1.y + v1.z) - (v2.x + v2.y + v2.z));
-
-            voxels.forEach(v => {
-                const isoX = centerX + (v.x - v.y) * (scale * 0.7);
-                const isoY = centerY + (v.x + v.y) * (scale * 0.35) - (v.z * scale * 0.7);
-
-                ctx.fillStyle = `rgb(${v.r}, ${v.g}, ${v.b})`;
-                ctx.fillRect(isoX, isoY, scale * 0.7, scale * 0.7);
-            });
-        }
-
-        // 2D szelet nézet szerkesztéshez
-        function renderSlice(z) {
-            const { sizeX, sizeY, buffer, dataOffset } = model;
-            const view = new DataView(buffer);
-
-            const cellSize = Math.min(canvas.width / sizeX, canvas.height / sizeY) * 0.8;
-            const offsetX = (canvas.width - sizeX * cellSize) / 2;
-            const offsetY = (canvas.height - sizeY * cellSize) / 2;
-
-            layerInfo.innerText = `Z réteg: ${z + 1} / ${model.sizeZ}`;
-
-            for (let y = 0; y < sizeY; y++) {
-                for (let x = 0; x < sizeX; x++) {
-                    // Kiszámoljuk az adott voxel pozícióját a bufferben
-                    const index = (z * sizeY * sizeX) + (y * sizeX) + x;
-                    const bytePos = dataOffset + index * 4;
-
-                    if (bytePos + 4 > buffer.byteLength) continue;
-
-                    const r = view.getUint8(bytePos);
-                    const g = view.getUint8(bytePos + 1);
-                    const b = view.getUint8(bytePos + 2);
-                    const a = view.getUint8(bytePos + 3);
-
-                    if (a > 0) {
-                        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                    } else {
-                        ctx.fillStyle = '#222';
-                    }
-
-                    ctx.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize - 1, cellSize - 1);
-                }
-            }
-        }
-
-        document.getElementById('saveBtn').addEventListener('click', () => {
-            if (!model.buffer) {
-                alert('Nincs betöltött modell!');
-                return;
-            }
-            const blob = new Blob([model.buffer], { type: 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'edited_model.cub';
-            a.click();
-            URL.revokeObjectURL(url);
-        });
-    </script>
+function clearModel(){while(group.children.length){const o=group.children.pop();if(o.geometry!==cubeGeometry)o.geometry?.dispose();if(o.material)o.material.dispose()}voxelMeshes.clear();selected=null;}
+function parseCub(buffer){
+ if(buffer.byteLength<12)throw new Error('A fÃ¡jl rÃ¶videbb a 12 bÃ¡jtos fejlÃ©cnÃ©l.');
+ const view=new DataView(buffer), sizeX=view.getUint32(0,true),sizeY=view.getUint32(4,true),sizeZ=view.getUint32(8,true);
+ const total=sizeX*sizeY*sizeZ;
+ if(!sizeX||!sizeY||!sizeZ||total>200000)throw new Error(`ÃrvÃ©nytelen vagy tÃºl nagy modellmÃ©ret: ${sizeX}Ã${sizeY}Ã${sizeZ}`);
+ const expected=12+total*4;
+ if(buffer.byteLength<expected)throw new Error(`A fÃ¡jl adatai hiÃ¡nyosak. VÃ¡rt mÃ©ret legalÃ¡bb ${expected} bÃ¡jt, kapott ${buffer.byteLength}.`);
+ const bytes=new Uint8Array(buffer.slice(0));
+ const voxels=new Map(); let i=12, nonempty=0;
+ // Az adatok sorrendje a meglÃ©vÅ szerkesztÅd indexelÃ©sÃ©t kÃ¶veti: Z, Y, X; X vÃ¡ltozik leggyorsabban.
+ for(let z=0;z<sizeZ;z++)for(let y=0;y<sizeY;y++)for(let x=0;x<sizeX;x++){
+   const r=bytes[i],g=bytes[i+1],b=bytes[i+2],a=bytes[i+3]; i+=4;
+   if(a>0){voxels.set(key(x,y,z),{x,y,z,r,g,b,a,bytesIndex:i-4});nonempty++;}
+ }
+ return {sizeX,sizeY,sizeZ,bytes,voxels,nonempty};
+}
+function makeVoxel(v){
+ const material=new THREE.MeshStandardMaterial({color:new THREE.Color(v.r/255,v.g/255,v.b/255),roughness:.82,metalness:0});
+ const mesh=new THREE.Mesh(cubeGeometry,material);
+ mesh.position.set(v.x-(model.sizeX-1)/2,(model.sizeZ-1)/2-v.z,v.y-(model.sizeY-1)/2);
+ mesh.userData.voxelKey=key(v.x,v.y,v.z); mesh.userData.voxel=v;
+ group.add(mesh);voxelMeshes.set(mesh.userData.voxelKey,mesh);
+}
+function drawModel(){
+ clearModel();
+ for(const v of model.voxels.values())makeVoxel(v);
+ const maxDim=Math.max(model.sizeX,model.sizeY,model.sizeZ,1);
+ grid.scale.setScalar(Math.max(1,Math.ceil(maxDim/20)));
+ camera.position.set(maxDim*1.4,maxDim*1.15,maxDim*1.7);
+ controls.target.set(0,0,0);controls.minDistance=Math.max(2,maxDim*.7);controls.maxDistance=maxDim*8;controls.update();
+ info.textContent=`BetÃ¶ltve: ${fileName} (${model.sizeX}Ã${model.sizeY}Ã${model.sizeZ}) Â· ${model.nonempty} lÃ¡thatÃ³ voxel`;
+ saveBtn.disabled=false;colorPicker.disabled=false;paintBtn.disabled=false;eraseBtn.disabled=false;restoreBtn.disabled=false;
+ selectedInfo.textContent='Koppints egy kockÃ¡ra a kijelÃ¶lÃ©shez.';status.textContent='A modell betÃ¶ltve.';
+}
+fileInput.addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{const buffer=await file.arrayBuffer();model=parseCub(buffer);originalBytes=new Uint8Array(buffer.slice(0));fileName=file.name;drawModel();}
+ catch(err){status.textContent='BetÃ¶ltÃ©si hiba: '+err.message;info.textContent='A fÃ¡jlt nem sikerÃ¼lt Ã©rtelmezni.';}
+});
+function selectAt(event){
+ const rect=renderer.domElement.getBoundingClientRect();pointer.x=((event.clientX-rect.left)/rect.width)*2-1;pointer.y=-((event.clientY-rect.top)/rect.height)*2+1;
+ raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(group.children,false);
+ if(!hits.length){selected=null;selectedInfo.textContent='Nincs kijelÃ¶lt voxel.';return;}
+ selected=hits[0].object;const v=selected.userData.voxel;
+ colorPicker.value='#'+[v.r,v.g,v.b].map(n=>n.toString(16).padStart(2,'0')).join('');
+ selectedInfo.textContent=`KijelÃ¶lve: X ${v.x+1}, Y ${v.y+1}, Z ${v.z+1} Â· RGB(${v.r}, ${v.g}, ${v.b})`;
+}
+renderer.domElement.addEventListener('pointerup',e=>{if(e.pointerType==='touch'||e.button===0)selectAt(e);});
+function updateBytes(v,r,g,b,a){const i=v.bytesIndex;model.bytes[i]=r;model.bytes[i+1]=g;model.bytes[i+2]=b;model.bytes[i+3]=a;v.r=r;v.g=g;v.b=b;v.a=a;}
+paintBtn.addEventListener('click',()=>{
+ if(!selected)return;const v=selected.userData.voxel,c=new THREE.Color(colorPicker.value);const r=Math.round(c.r*255),g=Math.round(c.g*255),b=Math.round(c.b*255);
+ updateBytes(v,r,g,b,255);selected.material.color.setRGB(r/255,g/255,b/255);selectedInfo.textContent=`SzÃ­n mÃ³dosÃ­tva: X ${v.x+1}, Y ${v.y+1}, Z ${v.z+1}`;status.textContent='A szÃ­n mÃ³dosult. MentÃ©shez nyomd meg a MentÃ©s gombot.';
+});
+eraseBtn.addEventListener('click',()=>{
+ if(!selected)return;const v=selected.userData.voxel;updateBytes(v,v.r,v.g,v.b,0);group.remove(selected);selected.material.dispose();voxelMeshes.delete(selected.userData.voxelKey);model.voxels.delete(selected.userData.voxelKey);selected=null;model.nonempty--;selectedInfo.textContent='Voxel tÃ¶rÃ¶lve.';info.textContent=`${fileName} (${model.sizeX}Ã${model.sizeY}Ã${model.sizeZ}) Â· ${model.nonempty} lÃ¡thatÃ³ voxel`;status.textContent='Voxel tÃ¶rÃ¶lve.';
+});
+restoreBtn.addEventListener('click',()=>{
+ if(!selected||!originalBytes)return;const v=selected.userData.voxel;const i=v.bytesIndex;const r=originalBytes[i],g=originalBytes[i+1],b=originalBytes[i+2],a=originalBytes[i+3];
+ if(a===0){status.textContent='Az eredeti helyen nem volt lÃ¡thatÃ³ voxel; tÃ¶ltsd be Ãºjra az eredeti fÃ¡jlt a visszaÃ¡llÃ­tÃ¡shoz.';return;}
+ updateBytes(v,r,g,b,a);selected.material.color.setRGB(r/255,g/255,b/255);colorPicker.value='#'+[r,g,b].map(n=>n.toString(16).padStart(2,'0')).join('');selectedInfo.textContent='Voxel eredeti szÃ­ne visszaÃ¡llÃ­tva.';status.textContent='Eredeti szÃ­n visszaÃ¡llÃ­tva.';
+});
+saveBtn.addEventListener('click',()=>{
+ if(!model)return;
+ const blob=new Blob([model.bytes],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='edited_'+fileName.replace(/\.cub$/i,'')+'.cub';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);status.textContent='A mÃ³dosÃ­tott .cub fÃ¡jl letÃ¶ltÃ©se elindult.';
+});
+document.querySelector('#resetViewBtn').addEventListener('click',()=>{
+ if(!model)return;const d=Math.max(model.sizeX,model.sizeY,model.sizeZ,1);camera.position.set(d*1.4,d*1.15,d*1.7);controls.target.set(0,0,0);controls.update();
+});
+</script>
 </body>
 </html>
