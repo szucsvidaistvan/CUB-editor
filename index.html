@@ -71,7 +71,7 @@
   #main { flex: 1; display: flex; min-height: 0; position: relative; }
 
   #sidebar {
-    width: 280px;
+    width: 300px;
     background: var(--panel);
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column;
@@ -110,12 +110,12 @@
   #dropzone {
     border: 2px dashed var(--border);
     border-radius: 10px;
-    padding: 18px 12px;
+    padding: 14px 12px;
     text-align: center;
     color: var(--muted);
     font-size: 13px;
     cursor: pointer;
-    min-height: 64px;
+    min-height: 54px;
     display: flex; align-items: center; justify-content: center;
   }
   #dropzone.drag { border-color: var(--accent); background: #2a3040; }
@@ -129,7 +129,14 @@
 
   label.row {
     display: flex; align-items: center; gap: 10px;
-    font-size: 14px; min-height: 36px;
+    font-size: 13px; min-height: 32px;
+  }
+  label.row span { width: 70px; color: var(--muted); }
+  
+  input[type="number"] {
+    flex: 1; height: 36px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 0 8px; font-size: 14px;
   }
   input[type="color"] {
     width: 44px; height: 36px;
@@ -157,7 +164,7 @@
     z-index: 10; max-width: calc(100% - 16px);
   }
   #toolbar .btn {
-    padding: 0; width: 46px; height: 48px;
+    padding: 0; width: 44px; height: 48px;
     border-radius: 12px; font-size: 10px;
     flex-direction: column; gap: 1px; min-height: 48px;
   }
@@ -201,7 +208,7 @@
     #sidebar h1 { display: none; }
     #sidebar {
       position: fixed; top: 0; left: 0; bottom: 0;
-      width: min(300px, 85vw); z-index: 30;
+      width: min(310px, 85vw); z-index: 30;
       transform: translateX(-105%);
       transition: transform 0.25s ease;
       padding-top: calc(12px + var(--safe-top));
@@ -211,13 +218,9 @@
     #sidebar.open { transform: translateX(0); }
     #editbar { display: flex; }
     #toolbar { top: 8px; }
-    #toolbar .btn { width: 48px; height: 50px; }
+    #toolbar .btn { width: 42px; height: 50px; }
     #hint { bottom: calc(8px + var(--safe-bottom)); font-size: 10px; }
     .desktop-only { display: none !important; }
-  }
-  @media (max-width: 380px) {
-    #toolbar .btn { width: 42px; height: 46px; font-size: 9px; }
-    #toolbar .btn .ico { font-size: 15px; }
   }
 </style>
 </head>
@@ -235,48 +238,44 @@
   <div id="sidebar">
     <h1>Voxoria CUB Editor</h1>
 
-    <div id="dropzone">
-      .cub fájl ide húzása<br>vagy koppints a betöltéshez
-    </div>
+    <div id="dropzone">.cub fájl ide húzása vagy koppintás</div>
     <input type="file" id="fileInput" accept=".cub" hidden>
 
-    <button class="btn primary" id="btnLoad">Fájl betöltése</button>
-    <button class="btn ok" id="btnExport" disabled>Export .cub</button>
+    <div style="display: flex; gap: 8px;">
+      <button class="btn primary" id="btnLoad" style="flex:1">Megnyitás</button>
+      <button class="btn ok" id="btnExport" style="flex:1" disabled>Export .cub</button>
+    </div>
+
+    <button class="btn" id="btnUndo" disabled>↩️ Visszavonás (Undo)</button>
+
+    <h2>Térkitöltő (Generátor)</h2>
+    <label class="row"><span>Szélesség (W)</span><input type="number" id="genW" value="14" min="1" max="64"></label>
+    <label class="row"><span>Magasság (H)</span><input type="number" id="genH" value="14" min="1" max="64"></label>
+    <label class="row"><span>Mélység (D)</span><input type="number" id="genD" value="12" min="1" max="64"></label>
+    <button class="btn primary" id="btnGenerate">Tér feltöltése dobozzal</button>
 
     <h2>Modell info</h2>
     <div id="info">Nincs betöltött modell</div>
 
-    <h2>Nézet</h2>
+    <h2>Nézet & Jelölők</h2>
     <label class="row"><input type="checkbox" id="chkGrid" checked> Rács</label>
-    <label class="row"><input type="checkbox" id="chkAxes" checked> Tengelyek</label>
+    <label class="row"><input type="checkbox" id="chkAxes" checked> Tengelyek + Iránytű</label>
     <label class="row desktop-only"><input type="checkbox" id="chkCenter" checked> XZ középre</label>
-    <label class="row">
-      Voxel
-      <input type="range" id="rngVoxel" min="0.4" max="1.2" step="0.05" value="0.85">
-    </label>
+    <label class="row">Voxel méret <input type="range" id="rngVoxel" min="0.4" max="1.2" step="0.05" value="0.85"></label>
     <button class="btn" id="btnResetCam">Kamera reset</button>
 
     <h2>Szerkesztés</h2>
-    <label class="row">
-      Aktív szín
-      <input type="color" id="colPaint" value="#c8d0d8">
-    </label>
-    <button class="btn" id="btnNewVoxel">Üres modell + 1 voxel</button>
+    <label class="row"><span>Szín</span><input type="color" id="colPaint" value="#c8d0d8"></label>
     <button class="btn danger" id="btnClear" disabled>Összes voxel törlése</button>
-
-    <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4">
-      <b>Hozzáad:</b> koppints egy voxel oldalára → mellé rakja az új kockát.<br>
-      Orbit: 1 ujj forgat, 2 ujj zoom/pan.
-    </p>
   </div>
 
   <div id="canvas-wrap">
     <div id="toolbar">
       <button class="btn" data-tool="orbit"><span class="ico">🔄</span>Orbit</button>
-      <button class="btn" data-tool="add"><span class="ico">➕</span>Hozzáad</button>
-      <button class="btn" data-tool="paint"><span class="ico">🎨</span>Fest</button>
-      <button class="btn" data-tool="erase"><span class="ico">🗑️</span>Töröl</button>
-      <button class="btn" data-tool="pick"><span class="ico">💉</span>Mint</button>
+      <button class="btn" data-tool="add"><span class="ico">➕</span>Add</button>
+      <button class="btn" data-tool="paint"><span class="ico">🎨</span>Paint</button>
+      <button class="btn" data-tool="erase"><span class="ico">🗑️</span>Erase</button>
+      <button class="btn" data-tool="pick"><span class="ico">💉</span>Pick</button>
     </div>
     <div id="hint">1 ujj: forgatás · 2 ujj: zoom · Eszköz aktív → koppints</div>
     <canvas id="c"></canvas>
@@ -285,6 +284,7 @@
 
 <div id="editbar">
   <input type="color" id="colPaintBar" value="#c8d0d8" title="Szín">
+  <button class="btn" id="btnUndoBar" disabled>↩️ Undo</button>
   <button class="btn ok" id="btnExportBar" disabled>Export</button>
   <button class="btn" id="btnResetCamBar">Reset</button>
 </div>
@@ -300,6 +300,8 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
 const state = {
   grid: new Map(),
@@ -310,6 +312,33 @@ const state = {
   paintColor: { r: 200, g: 208, b: 216 },
   filename: null,
 };
+
+const historyStack = [];
+function saveState() {
+  const snapshot = new Map();
+  for (let [k, v] of state.grid) {
+    snapshot.set(k, { ...v });
+  }
+  historyStack.push({ grid: snapshot, dims: { ...state.dims } });
+  if (historyStack.length > 30) historyStack.shift();
+  updateUndoBtn();
+}
+
+function undo() {
+  if (historyStack.length === 0) return;
+  const prev = historyStack.pop();
+  state.grid = prev.grid;
+  state.dims = prev.dims;
+  buildMesh();
+  updateInfo();
+  updateUndoBtn();
+}
+
+function updateUndoBtn() {
+  const dis = historyStack.length === 0;
+  document.getElementById('btnUndo').disabled = dis;
+  document.getElementById('btnUndoBar').disabled = dis;
+}
 
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({
@@ -340,8 +369,30 @@ scene.add(dir2);
 const gridHelper = new THREE.GridHelper(40, 40, 0x3a3f4b, 0x2a2e38);
 gridHelper.position.y = -0.01;
 scene.add(gridHelper);
+
 const axesHelper = new THREE.AxesHelper(6);
 scene.add(axesHelper);
+
+// Iránytű feliratok a rácson (ELEJE / HÁTULJA / JOBB / BAL)
+const compassGroup = new THREE.Group();
+scene.add(compassGroup);
+
+const canvasFontLoader = new FontLoader();
+canvasFontLoader.load('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+  const createTextLabel = (text, pos) => {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xc4a06b });
+    const geo = new TextGeometry(text, { font: font, size: 0.8, depth: 0.1 });
+    geo.center();
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(pos);
+    mesh.rotation.x = -Math.PI / 2;
+    compassGroup.add(mesh);
+  };
+  createTextLabel('ELEJE (+Z)', new THREE.Vector3(0, 0.05, 7));
+  createTextLabel('HÁTULJA (-Z)', new THREE.Vector3(0, 0.05, -7));
+  createTextLabel('JOBB (+X)', new THREE.Vector3(7, 0.05, 0));
+  createTextLabel('BAL (-X)', new THREE.Vector3(-7, 0.05, 0));
+});
 
 const meshGroup = new THREE.Group();
 scene.add(meshGroup);
@@ -349,9 +400,7 @@ scene.add(meshGroup);
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-const FACE_SHADE = {
-  py: 1.00, ny: 0.62, px: 0.85, nx: 0.85, pz: 0.93, nz: 0.78,
-};
+const FACE_SHADE = { py: 1.00, ny: 0.62, px: 0.85, nx: 0.85, pz: 0.93, nz: 0.78 };
 
 function key(x, y, z) { return x + ',' + y + ',' + z; }
 function parseKey(k) {
@@ -380,11 +429,11 @@ function parseCub(buffer, centerXZ) {
         const r = u8[i], g = u8[i + 1], b = u8[i + 2];
         i += 3;
         if (r === 0 && g === 0 && b === 0) continue;
-        grid.set(key(xx + ox, zz, yy + oz), { r: r, g: g, b: b });
+        grid.set(key(xx + ox, zz, yy + oz), { r, g, b });
       }
     }
   }
-  return { grid: grid, dims: { w: w, d: d, h: h } };
+  return { grid, dims: { w, d, h } };
 }
 
 function exportCub() {
@@ -420,7 +469,7 @@ function exportCub() {
       }
     }
   }
-  return { buffer: buf, dims: { w: w, d: d, h: h } };
+  return { buffer: buf, dims: { w, d, h } };
 }
 
 function buildMesh() {
@@ -455,9 +504,7 @@ function buildMesh() {
       const sh = f.shade * jitter;
       const cr = (col.r / 255) * sh, cg = (col.g / 255) * sh, cb = (col.b / 255) * sh;
       const base = [x * s, y * s, z * s];
-      const v = f.verts.map(function(vt) {
-        return [base[0] + vt[0]*s, base[1] + vt[1]*s, base[2] + vt[2]*s];
-      });
+      const v = f.verts.map(vt => [base[0] + vt[0]*s, base[1] + vt[1]*s, base[2] + vt[2]*s]);
       const idx = [0,1,2, 0,2,3];
       for (let ii = 0; ii < idx.length; ii++) {
         const i = idx[ii];
@@ -481,7 +528,7 @@ function buildMesh() {
   mesh.name = 'voxels';
   meshGroup.add(mesh);
 
-  const maxPick = isMobile() ? 5000 : 10000;
+  const maxPick = 10000;
   if (state.grid.size < maxPick) {
     const boxGeo = new THREE.BoxGeometry(s * 0.98, s * 0.98, s * 0.98);
     const invMat = new THREE.MeshBasicMaterial({ visible: false });
@@ -493,11 +540,6 @@ function buildMesh() {
       meshGroup.add(m);
     }
   }
-}
-
-function isMobile() {
-  return window.matchMedia('(max-width: 768px)').matches ||
-    ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 }
 
 function updateInfo() {
@@ -517,7 +559,7 @@ function updateInfo() {
     minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
   }
   const name = state.filename || 'névtelen';
-  el.innerHTML = '<b>' + name + '</b><br>Dim: <b>' + state.dims.w + '×' + state.dims.d + '×' + state.dims.h + '</b><br>Voxel: <b>' + state.grid.size + '</b><br>Y: <b>' + minY + ' … ' + maxY + '</b>';
+  el.innerHTML = '<b>' + name + '</b><br>Dim: <b>' + state.dims.w + '×' + state.dims.d + '×' + state.dims.h + '</b><br>Voxel: <b>' + state.grid.size + '</b>';
   topTitle.textContent = name;
   setExportEnabled(true);
   document.getElementById('btnClear').disabled = false;
@@ -555,6 +597,7 @@ function fitCamera() {
 
 function loadFromBuffer(buffer, name) {
   try {
+    saveState();
     const result = parseCub(buffer, state.centerXZ);
     state.grid = result.grid;
     state.dims = result.dims;
@@ -603,50 +646,74 @@ document.getElementById('btnLoadTop').addEventListener('click', triggerLoad);
 fileInput.addEventListener('change', function() {
   const f = fileInput.files[0];
   if (!f) return;
-  f.arrayBuffer().then(function(buf) { loadFromBuffer(buf, f.name); });
+  f.arrayBuffer().then(buf => loadFromBuffer(buf, f.name));
   fileInput.value = '';
 });
 
-['dragenter', 'dragover'].forEach(function(ev) {
-  dropzone.addEventListener(ev, function(e) { e.preventDefault(); dropzone.classList.add('drag'); });
+['dragenter', 'dragover'].forEach(ev => {
+  dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('drag'); });
 });
-['dragleave', 'drop'].forEach(function(ev) {
-  dropzone.addEventListener(ev, function(e) { e.preventDefault(); dropzone.classList.remove('drag'); });
+['dragleave', 'drop'].forEach(ev => {
+  dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drag'); });
 });
-dropzone.addEventListener('drop', function(e) {
+dropzone.addEventListener('drop', e => {
   const f = e.dataTransfer.files[0];
   if (f && f.name.toLowerCase().endsWith('.cub')) {
-    f.arrayBuffer().then(function(buf) { loadFromBuffer(buf, f.name); });
+    f.arrayBuffer().then(buf => loadFromBuffer(buf, f.name));
   }
 });
 
 document.getElementById('btnExport').addEventListener('click', doExport);
 document.getElementById('btnExportBar').addEventListener('click', doExport);
 
-document.getElementById('btnClear').addEventListener('click', function() {
-  if (!confirm('Tényleg törlöd az összes voxelt?')) return;
-  state.grid.clear();
-  buildMesh();
-  updateInfo();
-});
+document.getElementById('btnUndo').addEventListener('click', undo);
+document.getElementById('btnUndoBar').addEventListener('click', undo);
 
-document.getElementById('btnNewVoxel').addEventListener('click', function() {
+// Térkitöltő doboz generálás
+document.getElementById('btnGenerate').addEventListener('click', function() {
+  const w = parseInt(document.getElementById('genW').value) || 10;
+  const h = parseInt(document.getElementById('genH').value) || 10;
+  const d = parseInt(document.getElementById('genD').value) || 10;
+
+  saveState();
   state.grid.clear();
-  state.grid.set(key(0, 0, 0), { r: state.paintColor.r, g: state.paintColor.g, b: state.paintColor.b });
-  state.dims = { w: 1, d: 1, h: 1 };
-  state.filename = state.filename || 'new.cub';
+  state.dims = { w, d, h };
+  state.filename = 'generated_box.cub';
+
+  const ox = state.centerXZ ? -(w >> 1) : 0;
+  const oz = state.centerXZ ? -(d >> 1) : 0;
+
+  for (let y = 0; y < h; y++) {
+    for (let z = 0; z < d; z++) {
+      for (let x = 0; x < w; x++) {
+        state.grid.set(key(x + ox, y, z + oz), { r: state.paintColor.r, g: state.paintColor.g, b: state.paintColor.b });
+      }
+    }
+  }
+
   buildMesh();
   updateInfo();
   fitCamera();
-  setTool('add');
+  setTool('erase'); // Átrakjuk törlésre, hogy azonnal tudja faragni
   closeSidebar();
 });
 
-document.getElementById('chkGrid').addEventListener('change', function(e) { gridHelper.visible = e.target.checked; });
-document.getElementById('chkAxes').addEventListener('change', function(e) { axesHelper.visible = e.target.checked; });
+document.getElementById('btnClear').addEventListener('click', function() {
+  if (!confirm('Tényleg törlöd az összes voxelt?')) return;
+  saveState();
+  state.grid.clear();
+  buildMesh();
+  updateInfo();
+});
+
+document.getElementById('chkGrid').addEventListener('change', e => { gridHelper.visible = e.target.checked; });
+document.getElementById('chkAxes').addEventListener('change', e => {
+  axesHelper.visible = e.target.checked;
+  compassGroup.visible = e.target.checked;
+});
 const chkCenter = document.getElementById('chkCenter');
-if (chkCenter) chkCenter.addEventListener('change', function(e) { state.centerXZ = e.target.checked; });
-document.getElementById('rngVoxel').addEventListener('input', function(e) {
+if (chkCenter) chkCenter.addEventListener('change', e => { state.centerXZ = e.target.checked; });
+document.getElementById('rngVoxel').addEventListener('input', e => {
   state.voxelSize = parseFloat(e.target.value);
   buildMesh();
 });
@@ -662,16 +729,16 @@ function setPaintColor(hex) {
   document.getElementById('colPaint').value = hex;
   document.getElementById('colPaintBar').value = hex;
 }
-document.getElementById('colPaint').addEventListener('input', function(e) { setPaintColor(e.target.value); });
-document.getElementById('colPaintBar').addEventListener('input', function(e) { setPaintColor(e.target.value); });
+document.getElementById('colPaint').addEventListener('input', e => setPaintColor(e.target.value));
+document.getElementById('colPaintBar').addEventListener('input', e => setPaintColor(e.target.value));
 
-document.querySelectorAll('#toolbar .btn').forEach(function(btn) {
-  btn.addEventListener('click', function() { setTool(btn.dataset.tool); });
+document.querySelectorAll('#toolbar .btn').forEach(btn => {
+  btn.addEventListener('click', () => setTool(btn.dataset.tool));
 });
 
 function setTool(t) {
   state.tool = t;
-  document.querySelectorAll('#toolbar .btn').forEach(function(b) {
+  document.querySelectorAll('#toolbar .btn').forEach(b => {
     b.classList.toggle('tool-active', b.dataset.tool === t);
   });
   controls.enabled = (t === 'orbit');
@@ -680,7 +747,7 @@ function setTool(t) {
     orbit: '1 ujj: forgatás · 2 ujj: zoom/pan',
     add: 'Koppints egy voxel oldalára → új kocka mellé',
     paint: 'Koppints a voxelre a festéshez',
-    erase: 'Koppints a voxelre a törléshez',
+    erase: 'Koppints a voxelre a törléshez (Faragás)',
     pick: 'Koppints a szín mintavételéhez',
   };
   hint.textContent = hints[t] || '';
@@ -690,13 +757,13 @@ setTool('orbit');
 let pointerDownPos = null;
 const TAP_THRESHOLD = 12;
 
-canvas.addEventListener('pointerdown', function(e) {
+canvas.addEventListener('pointerdown', e => {
   if (state.tool === 'orbit') return;
   if (e.button !== 0 && e.pointerType === 'mouse') return;
   pointerDownPos = { x: e.clientX, y: e.clientY, id: e.pointerId };
 });
 
-canvas.addEventListener('pointerup', function(e) {
+canvas.addEventListener('pointerup', e => {
   if (state.tool === 'orbit') return;
   if (!pointerDownPos || pointerDownPos.id !== e.pointerId) return;
   const dx = e.clientX - pointerDownPos.x;
@@ -706,7 +773,7 @@ canvas.addEventListener('pointerup', function(e) {
   applyEditAt(e.clientX, e.clientY);
 });
 
-canvas.addEventListener('pointercancel', function() { pointerDownPos = null; });
+canvas.addEventListener('pointercancel', () => { pointerDownPos = null; });
 
 function applyEditAt(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
@@ -715,12 +782,16 @@ function applyEditAt(clientX, clientY) {
   raycaster.setFromCamera(mouse, camera);
 
   const hits = raycaster.intersectObjects(meshGroup.children, false);
-  const hit = hits.find(function(h) { return h.object.userData.voxelKey; });
+  const hit = hits.find(h => h.object.userData.voxelKey);
   if (!hit) return;
 
   const k = hit.object.userData.voxelKey;
   const p = parseKey(k);
   const x = p.x, y = p.y, z = p.z;
+
+  if (state.tool === 'erase' || state.tool === 'paint' || state.tool === 'add') {
+    saveState();
+  }
 
   if (state.tool === 'erase') {
     state.grid.delete(k);
@@ -733,9 +804,7 @@ function applyEditAt(clientX, clientY) {
   } else if (state.tool === 'pick') {
     const col = state.grid.get(k);
     if (col) {
-      const hex = '#' + [col.r, col.g, col.b].map(function(v) {
-        return v.toString(16).padStart(2, '0');
-      }).join('');
+      const hex = '#' + [col.r, col.g, col.b].map(v => v.toString(16).padStart(2, '0')).join('');
       setPaintColor(hex);
     }
   } else if (state.tool === 'add') {
@@ -743,7 +812,11 @@ function applyEditAt(clientX, clientY) {
     const n = snapNormal(worldN);
     const nx = x + n.x, ny = y + n.y, nz = z + n.z;
     const nk = key(nx, ny, nz);
-    if (state.grid.has(nk)) return;
+    if (state.grid.has(nk)) {
+      historyStack.pop(); // ha mégsem változott
+      updateUndoBtn();
+      return;
+    }
     state.grid.set(nk, { r: state.paintColor.r, g: state.paintColor.g, b: state.paintColor.b });
     buildMesh();
     updateInfo();
@@ -759,12 +832,12 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', function() { setTimeout(resize, 150); });
+window.addEventListener('orientationchange', () => setTimeout(resize, 150));
 if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 resize();
 
-document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
-document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+document.addEventListener('gesturestart', e => { e.preventDefault(); });
+document.addEventListener('gesturechange', e => { e.preventDefault(); });
 
 function animate() {
   requestAnimationFrame(animate);
