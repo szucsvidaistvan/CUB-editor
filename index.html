@@ -186,6 +186,18 @@
     overflow: hidden; text-overflow: ellipsis; z-index: 5;
   }
 
+  /* Iránytű jelölő overlay a képernyő sarkában */
+  #compass-overlay {
+    position: absolute;
+    bottom: 45px; left: 15px;
+    font-size: 11px; color: var(--accent2);
+    background: rgba(37, 40, 48, 0.85);
+    padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--border);
+    pointer-events: none; z-index: 5;
+    line-height: 1.4;
+  }
+
   #editbar {
     display: none; align-items: center; gap: 8px;
     padding: 8px 12px;
@@ -259,7 +271,7 @@
 
     <h2>Nézet & Jelölők</h2>
     <label class="row"><input type="checkbox" id="chkGrid" checked> Rács</label>
-    <label class="row"><input type="checkbox" id="chkAxes" checked> Tengelyek + Iránytű</label>
+    <label class="row"><input type="checkbox" id="chkAxes" checked> Tengelyek + Irányok</label>
     <label class="row desktop-only"><input type="checkbox" id="chkCenter" checked> XZ középre</label>
     <label class="row">Voxel méret <input type="range" id="rngVoxel" min="0.4" max="1.2" step="0.05" value="0.85"></label>
     <button class="btn" id="btnResetCam">Kamera reset</button>
@@ -277,6 +289,7 @@
       <button class="btn" data-tool="erase"><span class="ico">🗑️</span>Erase</button>
       <button class="btn" data-tool="pick"><span class="ico">💉</span>Pick</button>
     </div>
+    <div id="compass-overlay">🧭 <b>Elöl:</b> +Z | <b>Hátul:</b> -Z<br><b>Jobb:</b> +X | <b>Bal:</b> -X</div>
     <div id="hint">1 ujj: forgatás · 2 ujj: zoom · Eszköz aktív → koppints</div>
     <canvas id="c"></canvas>
   </div>
@@ -300,8 +313,6 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { FontLoader } from 'three/addons/loaders/FontLoader.js';
-import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
 const state = {
   grid: new Map(),
@@ -373,26 +384,21 @@ scene.add(gridHelper);
 const axesHelper = new THREE.AxesHelper(6);
 scene.add(axesHelper);
 
-// Iránytű feliratok a rácson (ELEJE / HÁTULJA / JOBB / BAL)
-const compassGroup = new THREE.Group();
-scene.add(compassGroup);
+// Diszkrét kis irányjelző gömbök a rács szélén (Piros = X, Zöld = Y, Kék = Z)
+const markerGroup = new THREE.Group();
+scene.add(markerGroup);
 
-const canvasFontLoader = new FontLoader();
-canvasFontLoader.load('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json', function(font) {
-  const createTextLabel = (text, pos) => {
-    const mat = new THREE.MeshBasicMaterial({ color: 0xc4a06b });
-    const geo = new TextGeometry(text, { font: font, size: 0.8, depth: 0.1 });
-    geo.center();
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.copy(pos);
-    mesh.rotation.x = -Math.PI / 2;
-    compassGroup.add(mesh);
-  };
-  createTextLabel('ELEJE (+Z)', new THREE.Vector3(0, 0.05, 7));
-  createTextLabel('HÁTULJA (-Z)', new THREE.Vector3(0, 0.05, -7));
-  createTextLabel('JOBB (+X)', new THREE.Vector3(7, 0.05, 0));
-  createTextLabel('BAL (-X)', new THREE.Vector3(-7, 0.05, 0));
-});
+const sphereGeo = new THREE.SphereGeometry(0.2, 16, 16);
+const matX = new THREE.MeshBasicMaterial({ color: 0xff5555 }); // +X Jobb
+const matZ = new THREE.MeshBasicMaterial({ color: 0x5555ff }); // +Z Eleje
+
+const mRight = new THREE.Mesh(sphereGeo, matX);
+mRight.position.set(6, 0.2, 0);
+markerGroup.add(mRight);
+
+const mFront = new THREE.Mesh(sphereGeo, matZ);
+mFront.position.set(0, 0.2, 6);
+markerGroup.add(mFront);
 
 const meshGroup = new THREE.Group();
 scene.add(meshGroup);
@@ -669,7 +675,6 @@ document.getElementById('btnExportBar').addEventListener('click', doExport);
 document.getElementById('btnUndo').addEventListener('click', undo);
 document.getElementById('btnUndoBar').addEventListener('click', undo);
 
-// Térkitöltő doboz generálás
 document.getElementById('btnGenerate').addEventListener('click', function() {
   const w = parseInt(document.getElementById('genW').value) || 10;
   const h = parseInt(document.getElementById('genH').value) || 10;
@@ -694,7 +699,7 @@ document.getElementById('btnGenerate').addEventListener('click', function() {
   buildMesh();
   updateInfo();
   fitCamera();
-  setTool('erase'); // Átrakjuk törlésre, hogy azonnal tudja faragni
+  setTool('erase');
   closeSidebar();
 });
 
@@ -709,7 +714,8 @@ document.getElementById('btnClear').addEventListener('click', function() {
 document.getElementById('chkGrid').addEventListener('change', e => { gridHelper.visible = e.target.checked; });
 document.getElementById('chkAxes').addEventListener('change', e => {
   axesHelper.visible = e.target.checked;
-  compassGroup.visible = e.target.checked;
+  markerGroup.visible = e.target.checked;
+  document.getElementById('compass-overlay').style.display = e.target.checked ? 'block' : 'none';
 });
 const chkCenter = document.getElementById('chkCenter');
 if (chkCenter) chkCenter.addEventListener('change', e => { state.centerXZ = e.target.checked; });
@@ -813,7 +819,7 @@ function applyEditAt(clientX, clientY) {
     const nx = x + n.x, ny = y + n.y, nz = z + n.z;
     const nk = key(nx, ny, nz);
     if (state.grid.has(nk)) {
-      historyStack.pop(); // ha mégsem változott
+      historyStack.pop();
       updateUndoBtn();
       return;
     }
