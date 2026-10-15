@@ -252,7 +252,7 @@
     <h1>Voxoria CUB Editor</h1>
 
     <div id="dropzone">.cub fájl ide húzása vagy koppintás</div>
-    <input type="file" id="fileInput" accept=".cub" hidden>
+    <input type="file" id="fileInput" accept=".cub,.zip,application/zip" hidden>
 
     <div style="display: flex; gap: 8px;">
       <button class="btn primary" id="btnLoad" style="flex:1">Megnyitás</button>
@@ -262,8 +262,8 @@
     <button class="btn" id="btnUndo" disabled>↩️ Visszavonás (Undo)</button>
 
     <h2>Karakter összerakó</h2>
-    <button class="btn primary" id="btnParts">Részek betöltése (több .cub + parts.json)</button>
-    <input type="file" id="partsInput" accept=".cub,.json" multiple hidden>
+    <button class="btn primary" id="btnParts">Részek betöltése (.zip vagy több .cub + parts.json)</button>
+    <input type="file" id="partsInput" accept=".cub,.json,.zip,application/zip" multiple hidden>
     <div id="partsInfo">Jelöld ki egyszerre a fájlokat (pl. female1_head.cub, female1_body.cub …, parts.json). Az azonos előtagú fájlok egy karakter lesznek.</div>
     <label class="row"><span>Karakter</span><select id="charSel" class="sel"></select></label>
     <label class="row"><span>Rész</span><select id="partSel" class="sel"></select></label>
@@ -709,6 +709,7 @@ document.getElementById('btnLoadTop').addEventListener('click', triggerLoad);
 fileInput.addEventListener('change', function() {
   const f = fileInput.files[0];
   if (!f) return;
+  if (/\.zip$/i.test(f.name)) { const fl = Array.from(fileInput.files); fileInput.value = ''; loadPartFiles(fl); return; }
   f.arrayBuffer().then(buf => loadFromBuffer(buf, f.name));
   fileInput.value = '';
 });
@@ -721,6 +722,7 @@ fileInput.addEventListener('change', function() {
 });
 dropzone.addEventListener('drop', e => {
   const f = e.dataTransfer.files[0];
+  if (f && f.name.toLowerCase().endsWith('.zip')) { loadPartFiles(Array.from(e.dataTransfer.files)); return; }
   if (f && f.name.toLowerCase().endsWith('.cub')) {
     f.arrayBuffer().then(buf => loadFromBuffer(buf, f.name));
   }
@@ -1089,7 +1091,54 @@ function setOrigin(part, o) {
   rebuildFromProject();
 }
 
-async function loadPartFiles(files) {
+async function inflateRaw(u8) {
+  const ds = new DecompressionStream('deflate-raw');
+  const out = new Blob([u8]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(out).arrayBuffer());
+}
+async function readZip(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf);
+  let e = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 70000); i--) { if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; } }
+  if (e < 0) throw new Error('Nem érvényes ZIP');
+  const n = dv.getUint16(e + 10, true);
+  let p = dv.getUint32(e + 16, true);
+  const dec = new TextDecoder(), out = [];
+  for (let i = 0; i < n; i++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('ZIP központi jegyzék hiba');
+    const flags = dv.getUint16(p + 8, true), method = dv.getUint16(p + 10, true);
+    const csz = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+    const lho = dv.getUint32(p + 42, true);
+    const name = dec.decode(u8.subarray(p + 46, p + 46 + nl));
+    p += 46 + nl + xl + cl;
+    if (name.endsWith('/') || /(^|\/)__MACOSX\//.test(name) || /(^|\/)\._/.test(name)) continue;
+    const lnl = dv.getUint16(lho + 26, true), lxl = dv.getUint16(lho + 28, true);
+    const start = lho + 30 + lnl + lxl;
+    const raw = u8.subarray(start, start + csz);
+    let data;
+    if (method === 0) data = raw.slice();
+    else if (method === 8) data = await inflateRaw(raw);
+    else throw new Error('Nem támogatott ZIP tömörítés (' + method + '): ' + name);
+    out.push({ name: name.split('/').pop(), data });
+  }
+  return out;
+}
+async function expandFiles(files) {
+  const out = [];
+  for (const f of files) {
+    if (/\.zip$/i.test(f.name)) {
+      try {
+        for (const z of await readZip(await f.arrayBuffer())) {
+          out.push({ name: z.name, arrayBuffer: async () => z.data.buffer.slice(z.data.byteOffset, z.data.byteOffset + z.data.byteLength), text: async () => new TextDecoder().decode(z.data) });
+        }
+      } catch (err) { alert(f.name + ': ' + err.message); }
+    } else out.push({ name: f.name, arrayBuffer: () => f.arrayBuffer(), text: () => f.text() });
+  }
+  return out;
+}
+
+async function loadPartFiles(files0) {
+  const files = await expandFiles(files0);
   const touched = new Set();
   for (const f of files) {
     const nm = f.name;
