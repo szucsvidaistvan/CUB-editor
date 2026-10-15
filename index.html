@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1c22">
-<title>Voxoria CUB Editor — Multi-Part</title>
+<title>Voxoria CUB Editor</title>
 <style>
   :root {
     --bg: #1a1c22;
@@ -21,48 +21,83 @@
     --ok: #6bc48a;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body {
-    height: 100%; height: 100dvh; overflow: hidden;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    background: var(--bg); color: var(--text); touch-action: none;
+    background: var(--bg);
+    color: var(--text);
+    touch-action: none;
   }
   body { display: flex; flex-direction: column; }
 
   #topbar {
-    display: none; align-items: center; gap: 8px;
-    padding: 8px 10px; padding-top: calc(8px + var(--safe-top));
-    background: var(--panel); border-bottom: 1px solid var(--border);
-    flex-shrink: 0; z-index: 20;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    padding-top: calc(8px + var(--safe-top));
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 20;
   }
   #topbar h1 {
-    font-size: 14px; font-weight: 600; color: var(--accent2);
-    flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent2);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   #btnMenu {
-    width: 40px; height: 40px; border-radius: 10px;
-    border: 1px solid var(--border); background: var(--panel2);
-    color: var(--text); font-size: 18px;
-    display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
   }
 
   #main { flex: 1; display: flex; min-height: 0; position: relative; }
 
   #sidebar {
-    width: 320px; background: var(--panel); border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; padding: 12px; gap: 8px;
-    overflow-y: auto; overflow-x: hidden; flex-shrink: 0; -webkit-overflow-scrolling: touch;
+    width: 300px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 12px; gap: 10px;
+    overflow-y: auto; overflow-x: hidden;
+    flex-shrink: 0;
+    -webkit-overflow-scrolling: touch;
   }
-  #sidebar h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.5px; color: var(--accent2); }
+  #sidebar h1 {
+    font-size: 15px; font-weight: 600;
+    letter-spacing: 0.5px; color: var(--accent2);
+  }
   #sidebar h2 {
-    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--muted); margin-top: 6px;
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); margin-top: 4px;
   }
   .btn {
-    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
-    padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 13px;
-    min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    min-height: 44px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
     user-select: none; -webkit-user-select: none;
   }
   .btn:active { background: #3a4050; }
@@ -73,119 +108,111 @@
   .btn:disabled { opacity: 0.4; pointer-events: none; }
 
   #dropzone {
-    border: 2px dashed var(--border); border-radius: 10px; padding: 12px;
-    text-align: center; color: var(--muted); font-size: 12px; cursor: pointer;
-    min-height: 48px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 14px 12px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    min-height: 54px;
+    display: flex; align-items: center; justify-content: center;
   }
   #dropzone.drag { border-color: var(--accent); background: #2a3040; }
-  #dropzone small { font-size: 10px; opacity: 0.7; }
 
   #info {
-    font-size: 11px; line-height: 1.5; color: var(--muted);
-    background: #1e2128; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+    font-size: 12px; line-height: 1.55; color: var(--muted);
+    background: #1e2128; padding: 10px 12px;
+    border-radius: 8px; border: 1px solid var(--border);
   }
   #info b { color: var(--text); }
 
   label.row {
-    display: flex; align-items: center; gap: 8px; font-size: 12px; min-height: 28px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; min-height: 32px;
   }
-  label.row span { width: 64px; color: var(--muted); flex-shrink: 0; }
+  label.row span { width: 70px; color: var(--muted); }
+  
   input[type="number"] {
-    flex: 1; height: 32px; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text); padding: 0 8px; font-size: 13px;
+    flex: 1; height: 36px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 0 8px; font-size: 14px;
   }
+  select.sel { flex:1; height:36px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:0 6px; font-size:14px; min-width:0; }
   input[type="color"] {
-    width: 40px; height: 32px; border: 1px solid var(--border);
-    border-radius: 8px; background: transparent; cursor: pointer; padding: 2px;
+    width: 44px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px; background: transparent;
+    cursor: pointer; padding: 2px;
   }
-  input[type="range"] { flex: 1; height: 24px; accent-color: var(--accent); }
-  input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
-
-  /* --- PART LIST --- */
-  #partList {
-    display: flex; flex-direction: column; gap: 4px;
-    max-height: 280px; overflow-y: auto;
-  }
-  .part-row {
-    display: flex; align-items: center; gap: 6px;
-    padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--panel2); cursor: pointer; font-size: 12px;
-    transition: background 0.12s, border-color 0.12s;
-  }
-  .part-row:hover { background: #343848; }
-  .part-row.active {
-    border-color: var(--accent); background: #2a3a4e;
-    box-shadow: 0 0 0 1px var(--accent);
-  }
-  .part-row.hidden-part { opacity: 0.45; }
-  .part-eye {
-    width: 28px; height: 28px; border: none; border-radius: 6px;
-    background: transparent; color: var(--text); font-size: 14px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .part-eye:hover { background: #3a4050; }
-  .part-eye.off { opacity: 0.35; }
-  .part-name { flex: 1; font-weight: 500; text-transform: capitalize; }
-  .part-meta { font-size: 10px; color: var(--muted); }
-  .part-color {
-    width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); flex-shrink: 0;
-  }
-
-  #partActions { display: flex; gap: 6px; flex-wrap: wrap; }
-  #partActions .btn { flex: 1; min-width: 0; min-height: 36px; font-size: 11px; padding: 6px 8px; }
+  input[type="range"] { flex: 1; height: 28px; accent-color: var(--accent); }
+  input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); }
 
   #canvas-wrap {
-    flex: 1; position: relative; min-width: 0; min-height: 0; background: var(--bg);
+    flex: 1; position: relative;
+    min-width: 0; min-height: 0; background: var(--bg);
   }
   canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
   #toolbar {
-    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    position: absolute;
+    top: 10px; left: 50%; transform: translateX(-50%);
     display: flex; gap: 5px;
     background: rgba(37, 40, 48, 0.92);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    padding: 6px; border-radius: 14px; border: 1px solid var(--border);
+    padding: 6px; border-radius: 14px;
+    border: 1px solid var(--border);
     z-index: 10; max-width: calc(100% - 16px);
   }
   #toolbar .btn {
-    padding: 0; width: 44px; height: 48px; border-radius: 12px; font-size: 10px;
+    padding: 0; width: 44px; height: 48px;
+    border-radius: 12px; font-size: 10px;
     flex-direction: column; gap: 1px; min-height: 48px;
   }
   #toolbar .btn .ico { font-size: 17px; line-height: 1; }
-  .tool-active { outline: 2px solid var(--accent); background: #3a5a7a !important; }
+  .tool-active {
+    outline: 2px solid var(--accent);
+    background: #3a5a7a !important;
+  }
 
   #hint {
-    position: absolute; bottom: calc(12px + var(--safe-bottom));
+    position: absolute;
+    bottom: calc(12px + var(--safe-bottom));
     left: 50%; transform: translateX(-50%);
     font-size: 11px; color: var(--muted);
-    background: rgba(26,28,34,0.88); padding: 6px 12px; border-radius: 8px;
-    pointer-events: none; white-space: nowrap; max-width: calc(100% - 24px);
+    background: rgba(26,28,34,0.88);
+    padding: 6px 12px; border-radius: 8px;
+    pointer-events: none; white-space: nowrap;
+    max-width: calc(100% - 24px);
     overflow: hidden; text-overflow: ellipsis; z-index: 5;
   }
+
+  /* Iránytű jelölő overlay a képernyő sarkában */
   #compass-overlay {
-    position: absolute; bottom: 45px; left: 15px;
+    position: absolute;
+    bottom: 45px; left: 15px;
     font-size: 11px; color: var(--accent2);
-    background: rgba(37, 40, 48, 0.85); padding: 6px 10px; border-radius: 8px;
-    border: 1px solid var(--border); pointer-events: none; z-index: 5; line-height: 1.4;
-  }
-  #activePartBadge {
-    position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
-    font-size: 12px; font-weight: 600; color: var(--accent2);
-    background: rgba(37, 40, 48, 0.9); padding: 4px 12px; border-radius: 8px;
-    border: 1px solid var(--border); z-index: 10; pointer-events: none;
+    background: rgba(37, 40, 48, 0.85);
+    padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--border);
+    pointer-events: none; z-index: 5;
+    line-height: 1.4;
   }
 
   #editbar {
     display: none; align-items: center; gap: 8px;
-    padding: 8px 12px; padding-bottom: calc(8px + var(--safe-bottom));
-    background: var(--panel); border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    padding-bottom: calc(8px + var(--safe-bottom));
+    background: var(--panel);
+    border-top: 1px solid var(--border);
     flex-shrink: 0; z-index: 15;
   }
   #editbar .btn { flex: 1; min-height: 48px; font-size: 13px; }
   #editbar input[type="color"] { width: 52px; height: 48px; flex-shrink: 0; }
 
   #overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 25;
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 25;
   }
   #overlay.open { display: block; }
 
@@ -194,8 +221,9 @@
     #sidebar h1 { display: none; }
     #sidebar {
       position: fixed; top: 0; left: 0; bottom: 0;
-      width: min(320px, 88vw); z-index: 30;
-      transform: translateX(-105%); transition: transform 0.25s ease;
+      width: min(310px, 85vw); z-index: 30;
+      transform: translateX(-105%);
+      transition: transform 0.25s ease;
       padding-top: calc(12px + var(--safe-top));
       padding-bottom: calc(12px + var(--safe-bottom));
       box-shadow: 4px 0 24px rgba(0,0,0,0.4);
@@ -223,41 +251,65 @@
   <div id="sidebar">
     <h1>Voxoria CUB Editor</h1>
 
-    <div id="dropzone">
-      .cub / több fájl / parts.json
-      <small>vagy mappa + parts.json együtt</small>
-    </div>
-    <input type="file" id="fileInput" accept=".cub,.json,.zip" multiple hidden>
+    <div id="dropzone">.cub fájl ide húzása vagy koppintás</div>
+    <input type="file" id="fileInput" accept=".cub" hidden>
 
-    <div style="display:flex;gap:6px;">
+    <div style="display: flex; gap: 8px;">
       <button class="btn primary" id="btnLoad" style="flex:1">Megnyitás</button>
-      <button class="btn ok" id="btnExport" style="flex:1" disabled>Export</button>
+      <button class="btn ok" id="btnExport" style="flex:1" disabled>Export .cub</button>
     </div>
-    <button class="btn" id="btnUndo" disabled>↩️ Visszavonás</button>
 
-    <h2>Részek (Parts)</h2>
-    <div id="partList">
-      <div style="color:var(--muted);font-size:12px;padding:8px;">Nincs betöltött rész</div>
+    <button class="btn" id="btnUndo" disabled>↩️ Visszavonás (Undo)</button>
+
+    <h2>Karakter összerakó</h2>
+    <button class="btn primary" id="btnParts">Részek betöltése (több .cub + parts.json)</button>
+    <input type="file" id="partsInput" accept=".cub,.json" multiple hidden>
+    <div id="partsInfo">Jelöld ki egyszerre a fájlokat (pl. female1_head.cub, female1_body.cub …, parts.json). Az azonos előtagú fájlok egy karakter lesznek.</div>
+    <label class="row"><span>Karakter</span><select id="charSel" class="sel"></select></label>
+    <label class="row"><span>Rész</span><select id="partSel" class="sel"></select></label>
+    <label class="row"><input type="checkbox" id="chkDim" checked> A többi rész elhalványítása</label>
+    <div id="originBox" style="background:#1e2128;border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;">
+      <div style="font-size:11px;color:var(--muted)">Rész helye (parts.json origin, voxel)</div>
+      <label class="row" style="min-height:30px"><span style="width:92px">X (bal–jobb)</span><input type="number" id="orgX" value="0"></label>
+      <label class="row" style="min-height:30px"><span style="width:92px">Y (hátul–elöl)</span><input type="number" id="orgY" value="0"></label>
+      <label class="row" style="min-height:30px"><span style="width:92px">Z (fel–le)</span><input type="number" id="orgZ" value="0"></label>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">
+        <button class="btn" data-nudge="0,-1" style="min-height:38px;padding:0">X−</button>
+        <button class="btn" data-nudge="0,1" style="min-height:38px;padding:0">X+</button>
+        <button class="btn" data-nudge="1,-1" style="min-height:38px;padding:0">Y−</button>
+        <button class="btn" data-nudge="1,1" style="min-height:38px;padding:0">Y+</button>
+        <button class="btn" data-nudge="2,-1" style="min-height:38px;padding:0">Z−</button>
+        <button class="btn" data-nudge="2,1" style="min-height:38px;padding:0">Z+</button>
+      </div>
+      <label class="row" style="min-height:30px"><span style="width:92px">Lépés</span><input type="number" id="nudgeStep" value="1" min="1" max="20"></label>
+      <button class="btn" id="btnResetOrigin">Rész visszaállítása az alapra</button>
     </div>
-    <div id="partActions">
-      <button class="btn" id="btnShowAll" disabled>👁 Mind</button>
-      <button class="btn" id="btnHideOthers" disabled>🎯 Csak aktív</button>
-      <button class="btn" id="btnExportPart" disabled>⬇️ Aktív rész</button>
+    <label class="row"><input type="checkbox" id="chkHairTint"> Haj színezése <input type="color" id="colHair" value="#d9b45a"></label>
+    <div style="display:flex;gap:8px;">
+      <button class="btn ok" id="btnExportZip" style="flex:1" disabled>Részek ZIP</button>
+      <button class="btn" id="btnExportJson" style="flex:1" disabled>parts.json</button>
     </div>
+    <div style="font-size:11px;color:var(--muted)">Add/Paint/Erase a koppintott voxel részét szerkeszti. Pick: színt vesz és kijelöli a részt. Add: az új voxel a kijelölt részhez kerül.</div>
+
+    <h2>Térkitöltő (Generátor)</h2>
+    <label class="row"><span>Szélesség (W)</span><input type="number" id="genW" value="14" min="1" max="64"></label>
+    <label class="row"><span>Magasság (H)</span><input type="number" id="genH" value="14" min="1" max="64"></label>
+    <label class="row"><span>Mélység (D)</span><input type="number" id="genD" value="12" min="1" max="64"></label>
+    <button class="btn primary" id="btnGenerate">Tér feltöltése dobozzal</button>
 
     <h2>Modell info</h2>
     <div id="info">Nincs betöltött modell</div>
 
-    <h2>Nézet</h2>
+    <h2>Nézet & Jelölők</h2>
     <label class="row"><input type="checkbox" id="chkGrid" checked> Rács</label>
-    <label class="row"><input type="checkbox" id="chkAxes" checked> Tengelyek</label>
+    <label class="row"><input type="checkbox" id="chkAxes" checked> Tengelyek + Irányok</label>
     <label class="row desktop-only"><input type="checkbox" id="chkCenter" checked> XZ középre</label>
-    <label class="row">Voxel <input type="range" id="rngVoxel" min="0.4" max="1.2" step="0.05" value="0.85"></label>
+    <label class="row">Voxel méret <input type="range" id="rngVoxel" min="0.4" max="1.2" step="0.05" value="0.85"></label>
     <button class="btn" id="btnResetCam">Kamera reset</button>
 
     <h2>Szerkesztés</h2>
     <label class="row"><span>Szín</span><input type="color" id="colPaint" value="#c8d0d8"></label>
-    <button class="btn danger" id="btnClearPart" disabled>Aktív rész törlése</button>
+    <button class="btn danger" id="btnClear" disabled>Összes voxel törlése</button>
   </div>
 
   <div id="canvas-wrap">
@@ -268,9 +320,8 @@
       <button class="btn" data-tool="erase"><span class="ico">🗑️</span>Erase</button>
       <button class="btn" data-tool="pick"><span class="ico">💉</span>Pick</button>
     </div>
-    <div id="activePartBadge">—</div>
     <div id="compass-overlay">🧭 <b>Elöl:</b> +Z | <b>Hátul:</b> -Z<br><b>Jobb:</b> +X | <b>Bal:</b> -X</div>
-    <div id="hint">1 ujj: forgatás · 2 ujj: zoom · Eszköz → koppints a részre</div>
+    <div id="hint">1 ujj: forgatás · 2 ujj: zoom · Eszköz aktív → koppints</div>
     <canvas id="c"></canvas>
   </div>
 </div>
@@ -294,61 +345,52 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-/* ================================================================
-   STATE — multi-part
-   parts: [{ id, name, grid: Map, origin: {x,y,z}, visible, dims }]
-   grid keys are LOCAL (0-based relative to part bbox at load)
-   world pos = local + origin
-================================================================ */
-const PART_ORDER = ['hair','head','body','arm_L','arm_R','hand_L','hand_R','leg_L','leg_R','boot'];
-const PART_COLORS = {
-  hair: '#c4a06b', head: '#e8c4a0', body: '#6b9ac4',
-  arm_L: '#6bc48a', arm_R: '#6bc48a',
-  hand_L: '#9ac46b', hand_R: '#9ac46b',
-  leg_L: '#c46b9a', leg_R: '#c46b9a', boot: '#888888',
-  model: '#c8d0d8'
-};
-
 const state = {
-  parts: [],          // array of part objects
-  activePartId: null,
-  characterId: null,  // "female1" / "female2" / null
+  grid: new Map(),
+  dims: { w: 0, d: 0, h: 0 },
   centerXZ: true,
   voxelSize: 0.85,
   tool: 'orbit',
   paintColor: { r: 200, g: 208, b: 216 },
+  filename: null,
+  asm: false,
+  owner: null,
+  dimSel: null,
 };
 
 const historyStack = [];
-
-function cloneParts(parts) {
-  return parts.map(p => ({
-    id: p.id, name: p.name, visible: p.visible,
-    origin: { ...p.origin },
-    dims: { ...p.dims },
-    grid: new Map([...p.grid].map(([k, v]) => [k, { ...v }])),
-  }));
-}
-
 function saveState() {
-  historyStack.push({
-    parts: cloneParts(state.parts),
-    activePartId: state.activePartId,
-  });
-  if (historyStack.length > 30) historyStack.shift();
+  if (state.asm && proj.cur && proj.chars[proj.cur]) {
+    historyStack.push({ asm: true, cur: proj.cur, char: cloneChar(proj.chars[proj.cur]) });
+  } else {
+    const snapshot = new Map();
+    for (let [k, v] of state.grid) {
+      snapshot.set(k, { ...v });
+    }
+    historyStack.push({ asm: false, grid: snapshot, dims: { ...state.dims } });
+  }
+  if (historyStack.length > 40) historyStack.shift();
   updateUndoBtn();
 }
 
 function undo() {
-  if (!historyStack.length) return;
+  if (historyStack.length === 0) return;
   const prev = historyStack.pop();
-  state.parts = prev.parts;
-  state.activePartId = prev.activePartId;
-  buildMesh();
-  renderPartList();
-  updateInfo();
+  if (prev.asm) {
+    state.asm = true;
+    proj.cur = prev.cur;
+    proj.chars[prev.cur] = prev.char;
+    rebuildFromProject();
+    refreshProjUI();
+  } else {
+    state.asm = false;
+    state.owner = null;
+    state.grid = prev.grid;
+    state.dims = prev.dims;
+    buildMesh();
+    updateInfo();
+  }
   updateUndoBtn();
-  updateActiveBadge();
 }
 
 function updateUndoBtn() {
@@ -357,9 +399,62 @@ function updateUndoBtn() {
   document.getElementById('btnUndoBar').disabled = dis;
 }
 
-function getActivePart() {
-  return state.parts.find(p => p.id === state.activePartId) || null;
-}
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({
+  canvas, antialias: true, alpha: false, powerPreference: 'high-performance',
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x1a1c22);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
+camera.position.set(18, 22, 28);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.1;
+controls.target.set(0, 8, 0);
+controls.enablePan = true;
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dir = new THREE.DirectionalLight(0xffffff, 0.75);
+dir.position.set(4, 10, 6);
+scene.add(dir);
+const dir2 = new THREE.DirectionalLight(0xffffff, 0.25);
+dir2.position.set(-3, 4, -5);
+scene.add(dir2);
+
+const gridHelper = new THREE.GridHelper(40, 40, 0x3a3f4b, 0x2a2e38);
+gridHelper.position.y = -0.01;
+scene.add(gridHelper);
+
+const axesHelper = new THREE.AxesHelper(6);
+scene.add(axesHelper);
+
+// Diszkrét kis irányjelző gömbök a rács szélén (Piros = X, Zöld = Y, Kék = Z)
+const markerGroup = new THREE.Group();
+scene.add(markerGroup);
+
+const sphereGeo = new THREE.SphereGeometry(0.2, 16, 16);
+const matX = new THREE.MeshBasicMaterial({ color: 0xff5555 }); // +X Jobb
+const matZ = new THREE.MeshBasicMaterial({ color: 0x5555ff }); // +Z Eleje
+
+const mRight = new THREE.Mesh(sphereGeo, matX);
+mRight.position.set(6, 0.2, 0);
+markerGroup.add(mRight);
+
+const mFront = new THREE.Mesh(sphereGeo, matZ);
+mFront.position.set(0, 0.2, 6);
+markerGroup.add(mFront);
+
+const meshGroup = new THREE.Group();
+scene.add(meshGroup);
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+const FACE_SHADE = { py: 1.00, ny: 0.62, px: 0.85, nx: 0.85, pz: 0.93, nz: 0.78 };
 
 function key(x, y, z) { return x + ',' + y + ',' + z; }
 function parseKey(k) {
@@ -367,8 +462,7 @@ function parseKey(k) {
   return { x: p[0], y: p[1], z: p[2] };
 }
 
-/* ---- CUB parse / export (local coords, no center) ---- */
-function parseCubRaw(buffer) {
+function parseCub(buffer, centerXZ) {
   const view = new DataView(buffer);
   if (buffer.byteLength < 12) throw new Error('Túl rövid fájl');
   const w = view.getUint32(0, true);
@@ -379,6 +473,8 @@ function parseCubRaw(buffer) {
     throw new Error('Rossz dimenziók: ' + w + '×' + d + '×' + h);
   }
   const grid = new Map();
+  const ox = centerXZ ? -(w >> 1) : 0;
+  const oz = centerXZ ? -(d >> 1) : 0;
   let i = 12;
   const u8 = new Uint8Array(buffer);
   for (let zz = 0; zz < h; zz++) {
@@ -387,18 +483,18 @@ function parseCubRaw(buffer) {
         const r = u8[i], g = u8[i + 1], b = u8[i + 2];
         i += 3;
         if (r === 0 && g === 0 && b === 0) continue;
-        grid.set(key(xx, zz, yy), { r, g, b });
+        grid.set(key(xx + ox, zz, yy + oz), { r, g, b });
       }
     }
   }
   return { grid, dims: { w, d, h } };
 }
 
-function exportPartCub(part) {
-  if (!part || part.grid.size === 0) return null;
+function exportCub() {
+  if (state.grid.size === 0) return null;
   let minX = Infinity, minY = Infinity, minZ = Infinity;
   let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
-  for (const k of part.grid.keys()) {
+  for (const k of state.grid.keys()) {
     const p = parseKey(k);
     minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
     minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
@@ -417,66 +513,27 @@ function exportPartCub(part) {
   for (let zz = 0; zz < h; zz++) {
     for (let yy = 0; yy < d; yy++) {
       for (let xx = 0; xx < w; xx++) {
-        const col = part.grid.get(key(xx + minX, zz + minY, yy + minZ));
-        if (col) { u8[i] = col.r; u8[i+1] = col.g; u8[i+2] = col.b; }
-        else { u8[i] = 0; u8[i+1] = 0; u8[i+2] = 0; }
+        const col = state.grid.get(key(xx + minX, zz + minY, yy + minZ));
+        if (col) {
+          u8[i] = col.r; u8[i + 1] = col.g; u8[i + 2] = col.b;
+        } else {
+          u8[i] = 0; u8[i + 1] = 0; u8[i + 2] = 0;
+        }
         i += 3;
       }
     }
   }
-  return { buffer: buf, dims: { w, d, h }, originShift: { x: minX, y: minY, z: minZ } };
+  return { buffer: buf, dims: { w, d, h } };
 }
 
-function downloadBuffer(buffer, filename) {
-  const blob = new Blob([buffer], { type: 'application/octet-stream' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+function dimMul(k) {
+  if (state.dimSel && state.owner) {
+    const ow = state.owner.get(k);
+    if (ow && ow !== state.dimSel) return 0.38;
+  }
+  return 1;
 }
 
-/* ---- Scene setup ---- */
-const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({
-  canvas, antialias: true, alpha: false, powerPreference: 'high-performance',
-});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-renderer.setClearColor(0x1a1c22);
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
-camera.position.set(18, 30, 28);
-
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
-controls.dampingFactor = 0.1;
-controls.target.set(0, 20, 0);
-controls.enablePan = true;
-controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const dir = new THREE.DirectionalLight(0xffffff, 0.75);
-dir.position.set(4, 10, 6);
-scene.add(dir);
-const dir2 = new THREE.DirectionalLight(0xffffff, 0.25);
-dir2.position.set(-3, 4, -5);
-scene.add(dir2);
-
-const gridHelper = new THREE.GridHelper(50, 50, 0x3a3f4b, 0x2a2e38);
-gridHelper.position.y = -0.01;
-scene.add(gridHelper);
-const axesHelper = new THREE.AxesHelper(8);
-scene.add(axesHelper);
-
-const meshGroup = new THREE.Group();
-scene.add(meshGroup);
-
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-const FACE_SHADE = { py: 1.00, ny: 0.62, px: 0.85, nx: 0.85, pz: 0.93, nz: 0.78 };
-
-/* ---- Build combined mesh from visible parts ---- */
 function buildMesh() {
   while (meshGroup.children.length) {
     const c = meshGroup.children[0];
@@ -484,6 +541,7 @@ function buildMesh() {
     if (c.geometry && c.name === 'voxels') c.geometry.dispose();
     if (c.material && c.name === 'voxels') c.material.dispose();
   }
+  if (state.grid.size === 0) return;
 
   const s = state.voxelSize;
   const positions = [], colors = [], normals = [];
@@ -496,49 +554,35 @@ function buildMesh() {
     { n: [0,0,-1], shade: FACE_SHADE.nz, verts: [[1,0,0],[0,0,0],[0,1,0],[1,1,0]] },
   ];
 
-  // Combined occupancy for face culling across parts
-  const worldOcc = new Set();
-  for (const part of state.parts) {
-    if (!part.visible) continue;
-    const o = part.origin;
-    for (const k of part.grid.keys()) {
-      const p = parseKey(k);
-      worldOcc.add(key(p.x + o.x, p.y + o.y, p.z + o.z));
-    }
-  }
-
-  let totalVox = 0;
-  for (const part of state.parts) {
-    if (!part.visible) continue;
-    const o = part.origin;
-    for (const [lk, col] of part.grid) {
-      const lp = parseKey(lk);
-      const x = lp.x + o.x, y = lp.y + o.y, z = lp.z + o.z;
-      totalVox++;
-      for (const f of faces) {
-        if (worldOcc.has(key(x + f.n[0], y + f.n[1], z + f.n[2]))) continue;
-        const hash = ((x * 73856093) ^ (y * 19349663) ^ (z * 83492791)) & 255;
-        const jitter = 0.96 + (hash / 255) * 0.08;
-        const sh = f.shade * jitter;
-        const cr = (col.r / 255) * sh, cg = (col.g / 255) * sh, cb = (col.b / 255) * sh;
-        const base = [x * s, y * s, z * s];
-        const v = f.verts.map(vt => [base[0] + vt[0]*s, base[1] + vt[1]*s, base[2] + vt[2]*s]);
-        for (const i of [0,1,2, 0,2,3]) {
-          positions.push(v[i][0], v[i][1], v[i][2]);
-          colors.push(cr, cg, cb);
-          normals.push(f.n[0], f.n[1], f.n[2]);
-        }
+  for (const entry of state.grid) {
+    const k = entry[0], col = entry[1];
+    const p = parseKey(k);
+    const x = p.x, y = p.y, z = p.z;
+    for (let fi = 0; fi < faces.length; fi++) {
+      const f = faces[fi];
+      if (state.grid.has(key(x + f.n[0], y + f.n[1], z + f.n[2]))) continue;
+      const hash = ((x * 73856093) ^ (y * 19349663) ^ (z * 83492791)) & 255;
+      const jitter = 1.0 - 0.04 + (hash / 255) * 0.08;
+      const sh = f.shade * jitter * dimMul(k);
+      const cr = (col.r / 255) * sh, cg = (col.g / 255) * sh, cb = (col.b / 255) * sh;
+      const base = [x * s, y * s, z * s];
+      const v = f.verts.map(vt => [base[0] + vt[0]*s, base[1] + vt[1]*s, base[2] + vt[2]*s]);
+      const idx = [0,1,2, 0,2,3];
+      for (let ii = 0; ii < idx.length; ii++) {
+        const i = idx[ii];
+        positions.push(v[i][0], v[i][1], v[i][2]);
+        colors.push(cr, cg, cb);
+        normals.push(f.n[0], f.n[1], f.n[2]);
       }
     }
   }
-
-  if (positions.length === 0) return;
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
   geo.computeBoundingSphere();
+
   const mat = new THREE.MeshStandardMaterial({
     vertexColors: true, roughness: 1, metalness: 0, flatShading: true,
   });
@@ -546,121 +590,41 @@ function buildMesh() {
   mesh.name = 'voxels';
   meshGroup.add(mesh);
 
-  // Invisible pick boxes — only for ACTIVE + visible part (performance)
-  const active = getActivePart();
-  if (active && active.visible && active.grid.size < 12000) {
+  const maxPick = 10000;
+  if (state.grid.size < maxPick) {
     const boxGeo = new THREE.BoxGeometry(s * 0.98, s * 0.98, s * 0.98);
     const invMat = new THREE.MeshBasicMaterial({ visible: false });
-    const o = active.origin;
-    for (const lk of active.grid.keys()) {
-      const lp = parseKey(lk);
+    for (const k of state.grid.keys()) {
+      const p = parseKey(k);
       const m = new THREE.Mesh(boxGeo, invMat);
-      m.position.set((lp.x + o.x + 0.5) * s, (lp.y + o.y + 0.5) * s, (lp.z + o.z + 0.5) * s);
-      m.userData.voxelKey = lk;          // LOCAL key
-      m.userData.partId = active.id;
+      m.position.set((p.x + 0.5) * s, (p.y + 0.5) * s, (p.z + 0.5) * s);
+      m.userData.voxelKey = k;
       meshGroup.add(m);
     }
   }
 }
 
-/* ---- Part list UI ---- */
-function renderPartList() {
-  const el = document.getElementById('partList');
-  if (!state.parts.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;">Nincs betöltött rész</div>';
-    document.getElementById('btnShowAll').disabled = true;
-    document.getElementById('btnHideOthers').disabled = true;
-    document.getElementById('btnExportPart').disabled = true;
-    document.getElementById('btnClearPart').disabled = true;
-    return;
-  }
-  // Sort by PART_ORDER
-  const sorted = [...state.parts].sort((a, b) => {
-    const ia = PART_ORDER.indexOf(a.name);
-    const ib = PART_ORDER.indexOf(b.name);
-    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-  });
-
-  el.innerHTML = '';
-  for (const part of sorted) {
-    const row = document.createElement('div');
-    row.className = 'part-row' + (part.id === state.activePartId ? ' active' : '') + (!part.visible ? ' hidden-part' : '');
-    row.dataset.id = part.id;
-
-    const eye = document.createElement('button');
-    eye.className = 'part-eye' + (part.visible ? '' : ' off');
-    eye.title = part.visible ? 'Elrejt' : 'Mutat';
-    eye.textContent = part.visible ? '👁' : '👁‍🗨';
-    eye.addEventListener('click', (e) => {
-      e.stopPropagation();
-      part.visible = !part.visible;
-      buildMesh();
-      renderPartList();
-      updateInfo();
-    });
-
-    const swatch = document.createElement('div');
-    swatch.className = 'part-color';
-    swatch.style.background = PART_COLORS[part.name] || '#888';
-
-    const name = document.createElement('span');
-    name.className = 'part-name';
-    name.textContent = part.name.replace('_', ' ');
-
-    const meta = document.createElement('span');
-    meta.className = 'part-meta';
-    meta.textContent = part.grid.size + ' vox';
-
-    row.appendChild(eye);
-    row.appendChild(swatch);
-    row.appendChild(name);
-    row.appendChild(meta);
-    row.addEventListener('click', () => setActivePart(part.id));
-    el.appendChild(row);
-  }
-
-  document.getElementById('btnShowAll').disabled = false;
-  document.getElementById('btnHideOthers').disabled = false;
-  document.getElementById('btnExportPart').disabled = !state.activePartId;
-  document.getElementById('btnClearPart').disabled = !state.activePartId;
-}
-
-function setActivePart(id) {
-  state.activePartId = id;
-  buildMesh(); // rebuild pick boxes for new active
-  renderPartList();
-  updateActiveBadge();
-  document.getElementById('btnExportPart').disabled = !id;
-  document.getElementById('btnClearPart').disabled = !id;
-}
-
-function updateActiveBadge() {
-  const badge = document.getElementById('activePartBadge');
-  const p = getActivePart();
-  badge.textContent = p ? 'Szerkesztés: ' + p.name.replace('_', ' ') : '—';
-}
-
 function updateInfo() {
   const el = document.getElementById('info');
   const topTitle = document.getElementById('topTitle');
-  if (!state.parts.length) {
+  const has = state.grid.size > 0;
+  if (!has) {
     el.innerHTML = 'Nincs betöltött modell';
     topTitle.textContent = 'Voxoria CUB Editor';
     setExportEnabled(false);
+    document.getElementById('btnClear').disabled = true;
     return;
   }
-  let total = 0, visible = 0;
-  for (const p of state.parts) {
-    total += p.grid.size;
-    if (p.visible) visible += p.grid.size;
+  let minY = Infinity, maxY = -Infinity;
+  for (const k of state.grid.keys()) {
+    const p = parseKey(k);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
   }
-  const charLabel = state.characterId || 'modell';
-  el.innerHTML =
-    '<b>' + charLabel + '</b><br>' +
-    'Részek: <b>' + state.parts.length + '</b><br>' +
-    'Voxel: <b>' + total + '</b> (látható: ' + visible + ')';
-  topTitle.textContent = charLabel;
+  const name = state.filename || 'névtelen';
+  el.innerHTML = '<b>' + name + '</b><br>Dim: <b>' + state.dims.w + '×' + state.dims.d + '×' + state.dims.h + '</b><br>Voxel: <b>' + state.grid.size + '</b>';
+  topTitle.textContent = name;
   setExportEnabled(true);
+  document.getElementById('btnClear').disabled = false;
 }
 
 function setExportEnabled(on) {
@@ -669,26 +633,19 @@ function setExportEnabled(on) {
 }
 
 function fitCamera() {
-  let minX = Infinity, minY = Infinity, minZ = Infinity;
-  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
-  let any = false;
-  for (const part of state.parts) {
-    if (!part.visible) continue;
-    const o = part.origin;
-    for (const k of part.grid.keys()) {
-      const p = parseKey(k);
-      const x = p.x + o.x, y = p.y + o.y, z = p.z + o.z;
-      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-      minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
-      any = true;
-    }
-  }
-  if (!any) {
-    controls.target.set(0, 10, 0);
-    camera.position.set(15, 20, 22);
+  if (state.grid.size === 0) {
+    controls.target.set(0, 2, 0);
+    camera.position.set(10, 12, 16);
     controls.update();
     return;
+  }
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  for (const k of state.grid.keys()) {
+    const p = parseKey(k);
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+    minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
   }
   const s = state.voxelSize;
   const cx = (minX + maxX + 1) * 0.5 * s;
@@ -696,315 +653,38 @@ function fitCamera() {
   const cz = (minZ + maxZ + 1) * 0.5 * s;
   const size = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 4) * s;
   controls.target.set(cx, cy, cz);
-  camera.position.set(cx + size * 1.3, cy + size * 0.9, cz + size * 1.5);
+  camera.position.set(cx + size * 1.4, cy + size * 1.1, cz + size * 1.6);
   controls.update();
 }
 
-/* ---- Load helpers ---- */
-function makePart(name, grid, dims, origin) {
-  return {
-    id: name + '_' + Math.random().toString(36).slice(2, 7),
-    name,
-    grid,
-    dims: dims || { w: 0, d: 0, h: 0 },
-    origin: origin || { x: 0, y: 0, z: 0 },
-    visible: true,
-  };
-}
-
-function loadSingleCub(buffer, filename) {
-  const { grid, dims } = parseCubRaw(buffer);
-  // Optional center for single-file mode
-  let origin = { x: 0, y: 0, z: 0 };
-  if (state.centerXZ) {
-    origin.x = -(dims.w >> 1);
-    origin.z = -(dims.d >> 1);
-  }
-  // Re-key grid is already local 0..w; origin handles world placement
-  const name = filename.replace(/\.cub$/i, '').replace(/^.*[\\/]/, '') || 'model';
-  state.parts = [makePart(name, grid, dims, origin)];
-  state.characterId = name;
-  state.activePartId = state.parts[0].id;
-  afterLoad();
-}
-
-function loadPartsFromManifest(manifest, fileMap, characterKey) {
-  // manifest = parts.json content, fileMap = { "female1_head.cub" -> ArrayBuffer }
-  // characterKey = "female1" or "female2"
-  const charData = manifest[characterKey];
-  if (!charData) throw new Error('Nincs ilyen karakter a parts.json-ben: ' + characterKey);
-
-  const parts = [];
-  for (const [partName, meta] of Object.entries(charData)) {
-    // Find matching file: female1_head.cub or head.cub
-    const candidates = [
-      characterKey + '_' + partName + '.cub',
-      partName + '.cub',
-      characterKey + '-' + partName + '.cub',
-    ];
-    let buf = null, fname = null;
-    for (const c of candidates) {
-      if (fileMap[c]) { buf = fileMap[c]; fname = c; break; }
-      // case-insensitive
-      const found = Object.keys(fileMap).find(k => k.toLowerCase() === c.toLowerCase());
-      if (found) { buf = fileMap[found]; fname = found; break; }
-    }
-    if (!buf) {
-      console.warn('Hiányzó rész:', partName);
-      continue;
-    }
-    const { grid, dims } = parseCubRaw(buf);
-    // origin from parts.json: [ox, oz, oy] wait — check structure
-    // parts.json: "origin": [5, 1, 63] with size [10,10,10]
-    // Looking at sizes: size is [w, d, h] typically and origin is world placement of local (0,0,0)
-    // From analysis: leg origin y~1 (bottom), head origin y~63 (top) — so origin[2] is Y height!
-    // origin: [x, z, y]  OR  [x, y, z]?
-    // size: [10,10,10] for head, origin [5,1,63]
-    // Cub file is w x d x h = 10x10x10, so local y is 0..9
-    // If origin[2]=63 is world Y of bottom of head, that matches full model height ~74
-    // origin[0]=5 is X, origin[1]=1 is Z (depth)
-    // So origin format is [x, z, y]  !! unusual but matches the data
-    // OR size is [w,h,d] and origin [x,y,z]?
-    // female1 leg size [5,13,36], cub file is 5x13x36 = w x d x h → size = [w,d,h]
-    // origin [4,1,1] → bottom of legs at y=1, good → origin is [x, z, y]?
-    // Wait: if size is [w,d,h] = [5,13,36], origin [4,1,1]:
-    //   If origin = [x,y,z] then y=1 (height) and z=1 (depth) — also works for legs at bottom
-    // head size [10,10,10], origin [5,1,63]: if [x,y,z] then y=1 would put head at bottom — WRONG
-    // if [x,z,y] then y=63 puts head at top — CORRECT
-    // So origin is [ox, oz, oy] where oy is world Y of the part's local y=0
-    const ori = meta.origin || [0, 0, 0];
-    const origin = { x: ori[0], y: ori[2], z: ori[1] }; // [x, z, y] → {x,y,z}
-    parts.push(makePart(partName, grid, dims, origin));
-  }
-
-  if (!parts.length) throw new Error('Egyik rész sem töltődött be');
-
-  // Sort and set
-  state.parts = parts;
-  state.characterId = characterKey;
-  // Prefer body as default active, else first
-  const body = parts.find(p => p.name === 'body');
-  state.activePartId = body ? body.id : parts[0].id;
-  afterLoad();
-}
-
-function afterLoad() {
-  historyStack.length = 0;
-  updateUndoBtn();
-  buildMesh();
-  renderPartList();
-  updateInfo();
-  updateActiveBadge();
-  fitCamera();
-  closeSidebar();
-}
-
-async function handleFiles(fileList) {
-  const files = Array.from(fileList);
-  if (!files.length) return;
-
-  // Zip?
-  const zipFile = files.find(f => f.name.toLowerCase().endsWith('.zip'));
-  if (zipFile) {
-    await loadZip(zipFile);
-    return;
-  }
-
-  // Collect buffers
-  const fileMap = {};
-  let manifest = null;
-  for (const f of files) {
-    const buf = await f.arrayBuffer();
-    const name = f.name.replace(/^.*[\\/]/, '');
-    if (name.toLowerCase() === 'parts.json' || name.toLowerCase().endsWith('.json')) {
-      manifest = JSON.parse(new TextDecoder().decode(buf));
-    } else if (name.toLowerCase().endsWith('.cub')) {
-      fileMap[name] = buf;
-    }
-  }
-
-  if (manifest && Object.keys(fileMap).length) {
-    // Detect character key from filenames or manifest keys
-    const keys = Object.keys(manifest);
-    let charKey = keys[0];
-    // Prefer key that matches filenames
-    for (const k of keys) {
-      if (Object.keys(fileMap).some(fn => fn.toLowerCase().includes(k.toLowerCase()))) {
-        charKey = k;
-        break;
-      }
-    }
-    // If multiple characters in zip and files for both, load first matching
-    loadPartsFromManifest(manifest, fileMap, charKey);
-    return;
-  }
-
-  if (Object.keys(fileMap).length === 1) {
-    const name = Object.keys(fileMap)[0];
-    loadSingleCub(fileMap[name], name);
-    return;
-  }
-
-  if (Object.keys(fileMap).length > 1) {
-    // Multiple cubs without manifest: load as separate parts at origin 0
-    // Try to infer names from filenames
+function loadFromBuffer(buffer, name) {
+  try {
     saveState();
-    const parts = [];
-    for (const [fname, buf] of Object.entries(fileMap)) {
-      const { grid, dims } = parseCubRaw(buf);
-      let name = fname.replace(/\.cub$/i, '');
-      // strip character prefix: female1_head → head
-      name = name.replace(/^(female\d+|human)[_-]/i, '');
-      let origin = { x: 0, y: 0, z: 0 };
-      if (state.centerXZ) {
-        origin.x = -(dims.w >> 1);
-        origin.z = -(dims.d >> 1);
-      }
-      parts.push(makePart(name, grid, dims, origin));
-    }
-    state.parts = parts;
-    state.characterId = 'multi';
-    state.activePartId = parts[0].id;
-    afterLoad();
-    return;
-  }
-
-  alert('Nem található .cub fájl');
-}
-
-async function loadZip(file) {
-  // Minimal ZIP reader (store method + deflate via DecompressionStream if available)
-  const buf = await file.arrayBuffer();
-  const u8 = new Uint8Array(buf);
-  const view = new DataView(buf);
-  const fileMap = {};
-  let manifest = null;
-
-  // Find central directory
-  let eocd = -1;
-  for (let i = u8.length - 22; i >= 0; i--) {
-    if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
-  }
-  if (eocd < 0) { alert('Érvénytelen ZIP'); return; }
-
-  const cdOffset = view.getUint32(eocd + 16, true);
-  const cdEntries = view.getUint16(eocd + 10, true);
-  let pos = cdOffset;
-
-  const entries = [];
-  for (let e = 0; e < cdEntries; e++) {
-    if (view.getUint32(pos, true) !== 0x02014b50) break;
-    const method = view.getUint16(pos + 10, true);
-    const compSize = view.getUint32(pos + 20, true);
-    const uncompSize = view.getUint32(pos + 24, true);
-    const nameLen = view.getUint16(pos + 28, true);
-    const extraLen = view.getUint16(pos + 30, true);
-    const commentLen = view.getUint16(pos + 32, true);
-    const localOff = view.getUint32(pos + 42, true);
-    const nameBytes = u8.slice(pos + 46, pos + 46 + nameLen);
-    const name = new TextDecoder().decode(nameBytes);
-    entries.push({ method, compSize, uncompSize, localOff, name });
-    pos += 46 + nameLen + extraLen + commentLen;
-  }
-
-  for (const ent of entries) {
-    if (ent.name.endsWith('/')) continue;
-    const baseName = ent.name.replace(/^.*[\\/]/, '');
-    // Local file header
-    const lo = ent.localOff;
-    if (view.getUint32(lo, true) !== 0x04034b50) continue;
-    const lnName = view.getUint16(lo + 26, true);
-    const lnExtra = view.getUint16(lo + 28, true);
-    const dataStart = lo + 30 + lnName + lnExtra;
-    const compData = u8.slice(dataStart, dataStart + ent.compSize);
-
-    let raw;
-    if (ent.method === 0) {
-      raw = compData;
-    } else if (ent.method === 8 && typeof DecompressionStream !== 'undefined') {
-      try {
-        const ds = new DecompressionStream('deflate-raw');
-        const stream = new Blob([compData]).stream().pipeThrough(ds);
-        raw = new Uint8Array(await new Response(stream).arrayBuffer());
-      } catch (err) {
-        console.warn('Deflate failed for', baseName, err);
-        continue;
-      }
-    } else {
-      console.warn('Nem támogatott tömörítés:', baseName, ent.method);
-      continue;
-    }
-
-    if (baseName.toLowerCase() === 'parts.json' || baseName.toLowerCase().endsWith('.json')) {
-      manifest = JSON.parse(new TextDecoder().decode(raw));
-    } else if (baseName.toLowerCase().endsWith('.cub')) {
-      fileMap[baseName] = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
-    }
-  }
-
-  if (manifest && Object.keys(fileMap).length) {
-    const keys = Object.keys(manifest);
-    let charKey = keys[0];
-    for (const k of keys) {
-      if (Object.keys(fileMap).some(fn => fn.toLowerCase().includes(k.toLowerCase()))) {
-        charKey = k;
-        break;
-      }
-    }
-    // If both female1 and female2 present, prefer female1
-    if (keys.includes('female1') && Object.keys(fileMap).some(f => f.includes('female1'))) {
-      charKey = 'female1';
-    }
-    loadPartsFromManifest(manifest, fileMap, charKey);
-  } else if (Object.keys(fileMap).length === 1) {
-    const name = Object.keys(fileMap)[0];
-    loadSingleCub(fileMap[name], name);
-  } else if (Object.keys(fileMap).length > 1) {
-    const parts = [];
-    for (const [fname, fbuf] of Object.entries(fileMap)) {
-      const { grid, dims } = parseCubRaw(fbuf);
-      let name = fname.replace(/\.cub$/i, '').replace(/^(female\d+|human)[_-]/i, '');
-      parts.push(makePart(name, grid, dims, { x: 0, y: 0, z: 0 }));
-    }
-    state.parts = parts;
-    state.characterId = file.name.replace(/\.zip$/i, '');
-    state.activePartId = parts[0].id;
-    afterLoad();
-  } else {
-    alert('A ZIP-ben nincs .cub fájl');
+    const result = parseCub(buffer, state.centerXZ);
+    state.grid = result.grid;
+    state.dims = result.dims;
+    state.filename = name;
+    state.asm = false; state.owner = null; state.dimSel = null;
+    buildMesh();
+    updateInfo();
+    fitCamera();
+    closeSidebar();
+  } catch (e) {
+    alert('Hiba: ' + e.message);
   }
 }
 
-/* ---- Export ---- */
-function doExportAll() {
-  // Export active part if only one, else export all visible as separate downloads
-  // For simplicity: export each part as separate .cub with original name
-  if (!state.parts.length) return;
-  if (state.parts.length === 1) {
-    const r = exportPartCub(state.parts[0]);
-    if (r) downloadBuffer(r.buffer, (state.characterId || 'model') + '.cub');
-    return;
-  }
-  // Multi: export each
-  for (const part of state.parts) {
-    if (part.grid.size === 0) continue;
-    const r = exportPartCub(part);
-    if (!r) continue;
-    const prefix = state.characterId || 'char';
-    downloadBuffer(r.buffer, prefix + '_' + part.name + '.cub');
-  }
+function doExport() {
+  const result = exportCub();
+  if (!result) return;
+  const blob = new Blob([result.buffer], { type: 'application/octet-stream' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (state.filename || 'model').replace(/\.cub$/i, '') + '_edited.cub';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
-function doExportActive() {
-  const p = getActivePart();
-  if (!p) return;
-  const r = exportPartCub(p);
-  if (!r) return;
-  const prefix = state.characterId || 'char';
-  downloadBuffer(r.buffer, prefix + '_' + p.name + '_edited.cub');
-}
-
-/* ---- Editing ---- */
 function snapNormal(n) {
   const ax = Math.abs(n.x), ay = Math.abs(n.y), az = Math.abs(n.z);
   if (ax >= ay && ax >= az) return { x: Math.sign(n.x) || 1, y: 0, z: 0 };
@@ -1012,62 +692,6 @@ function snapNormal(n) {
   return { x: 0, y: 0, z: Math.sign(n.z) || 1 };
 }
 
-function applyEditAt(clientX, clientY) {
-  const active = getActivePart();
-  if (!active || !active.visible) {
-    document.getElementById('hint').textContent = 'Válassz aktív (látható) részt a szerkesztéshez!';
-    return;
-  }
-
-  const rect = canvas.getBoundingClientRect();
-  mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-  mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
-
-  const hits = raycaster.intersectObjects(meshGroup.children, false);
-  const hit = hits.find(h => h.object.userData.voxelKey && h.object.userData.partId === active.id);
-  if (!hit) return;
-
-  const lk = hit.object.userData.voxelKey; // local key
-  const lp = parseKey(lk);
-
-  if (state.tool === 'erase' || state.tool === 'paint' || state.tool === 'add') {
-    saveState();
-  }
-
-  if (state.tool === 'erase') {
-    active.grid.delete(lk);
-    buildMesh();
-    renderPartList();
-    updateInfo();
-  } else if (state.tool === 'paint') {
-    active.grid.set(lk, { r: state.paintColor.r, g: state.paintColor.g, b: state.paintColor.b });
-    buildMesh();
-    updateInfo();
-  } else if (state.tool === 'pick') {
-    const col = active.grid.get(lk);
-    if (col) {
-      const hex = '#' + [col.r, col.g, col.b].map(v => v.toString(16).padStart(2, '0')).join('');
-      setPaintColor(hex);
-    }
-  } else if (state.tool === 'add') {
-    const worldN = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
-    const n = snapNormal(worldN);
-    const nx = lp.x + n.x, ny = lp.y + n.y, nz = lp.z + n.z;
-    const nk = key(nx, ny, nz);
-    if (active.grid.has(nk)) {
-      historyStack.pop();
-      updateUndoBtn();
-      return;
-    }
-    active.grid.set(nk, { r: state.paintColor.r, g: state.paintColor.g, b: state.paintColor.b });
-    buildMesh();
-    renderPartList();
-    updateInfo();
-  }
-}
-
-/* ---- UI wiring ---- */
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('overlay');
 function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('open'); }
@@ -1082,8 +706,10 @@ dropzone.addEventListener('click', triggerLoad);
 document.getElementById('btnLoad').addEventListener('click', triggerLoad);
 document.getElementById('btnLoadTop').addEventListener('click', triggerLoad);
 
-fileInput.addEventListener('change', () => {
-  handleFiles(fileInput.files);
+fileInput.addEventListener('change', function() {
+  const f = fileInput.files[0];
+  if (!f) return;
+  f.arrayBuffer().then(buf => loadFromBuffer(buf, f.name));
   fileInput.value = '';
 });
 
@@ -1094,42 +720,67 @@ fileInput.addEventListener('change', () => {
   dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drag'); });
 });
 dropzone.addEventListener('drop', e => {
-  handleFiles(e.dataTransfer.files);
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.toLowerCase().endsWith('.cub')) {
+    f.arrayBuffer().then(buf => loadFromBuffer(buf, f.name));
+  }
 });
 
-document.getElementById('btnExport').addEventListener('click', doExportAll);
-document.getElementById('btnExportBar').addEventListener('click', doExportAll);
-document.getElementById('btnExportPart').addEventListener('click', doExportActive);
+document.getElementById('btnExport').addEventListener('click', doExport);
+document.getElementById('btnExportBar').addEventListener('click', doExport);
+
 document.getElementById('btnUndo').addEventListener('click', undo);
 document.getElementById('btnUndoBar').addEventListener('click', undo);
 
-document.getElementById('btnShowAll').addEventListener('click', () => {
-  for (const p of state.parts) p.visible = true;
+document.getElementById('btnGenerate').addEventListener('click', function() {
+  const w = parseInt(document.getElementById('genW').value) || 10;
+  const h = parseInt(document.getElementById('genH').value) || 10;
+  const d = parseInt(document.getElementById('genD').value) || 10;
+
+  saveState();
+  state.grid.clear();
+  state.dims = { w, d, h };
+  state.filename = 'generated_box.cub';
+  state.asm = false; state.owner = null; state.dimSel = null;
+
+  const ox = state.centerXZ ? -(w >> 1) : 0;
+  const oz = state.centerXZ ? -(d >> 1) : 0;
+
+  for (let y = 0; y < h; y++) {
+    for (let z = 0; z < d; z++) {
+      for (let x = 0; x < w; x++) {
+        state.grid.set(key(x + ox, y, z + oz), { r: state.paintColor.r, g: state.paintColor.g, b: state.paintColor.b });
+      }
+    }
+  }
+
   buildMesh();
-  renderPartList();
   updateInfo();
-});
-document.getElementById('btnHideOthers').addEventListener('click', () => {
-  for (const p of state.parts) p.visible = (p.id === state.activePartId);
-  buildMesh();
-  renderPartList();
-  updateInfo();
+  fitCamera();
+  setTool('erase');
+  closeSidebar();
 });
 
-document.getElementById('btnClearPart').addEventListener('click', () => {
-  const p = getActivePart();
-  if (!p) return;
-  if (!confirm('Törlöd a(z) "' + p.name + '" összes voxelét?')) return;
+document.getElementById('btnClear').addEventListener('click', function() {
+  if (state.asm) {
+    const part = document.getElementById('partSel').value;
+    if (!part || !confirm('Törlöd a kijelölt rész (' + part + ') összes voxelét?')) return;
+    saveState();
+    proj.chars[proj.cur].parts[part].vox.clear();
+    rebuildFromProject();
+    return;
+  }
+  if (!confirm('Tényleg törlöd az összes voxelt?')) return;
   saveState();
-  p.grid.clear();
+  state.grid.clear();
   buildMesh();
-  renderPartList();
   updateInfo();
 });
 
 document.getElementById('chkGrid').addEventListener('change', e => { gridHelper.visible = e.target.checked; });
 document.getElementById('chkAxes').addEventListener('change', e => {
   axesHelper.visible = e.target.checked;
+  markerGroup.visible = e.target.checked;
   document.getElementById('compass-overlay').style.display = e.target.checked ? 'block' : 'none';
 });
 const chkCenter = document.getElementById('chkCenter');
@@ -1163,24 +814,27 @@ function setTool(t) {
     b.classList.toggle('tool-active', b.dataset.tool === t);
   });
   controls.enabled = (t === 'orbit');
+  const hint = document.getElementById('hint');
   const hints = {
     orbit: '1 ujj: forgatás · 2 ujj: zoom/pan',
-    add: 'Aktív rész: koppints oldalra → új voxel',
-    paint: 'Aktív rész: koppints festéshez',
-    erase: 'Aktív rész: koppints törléshez',
-    pick: 'Szín mintavétel az aktív részből',
+    add: 'Koppints egy voxel oldalára → új kocka mellé',
+    paint: 'Koppints a voxelre a festéshez',
+    erase: 'Koppints a voxelre a törléshez (Faragás)',
+    pick: 'Koppints a szín mintavételéhez',
   };
-  document.getElementById('hint').textContent = hints[t] || '';
+  hint.textContent = hints[t] || '';
 }
 setTool('orbit');
 
 let pointerDownPos = null;
 const TAP_THRESHOLD = 12;
+
 canvas.addEventListener('pointerdown', e => {
   if (state.tool === 'orbit') return;
   if (e.button !== 0 && e.pointerType === 'mouse') return;
   pointerDownPos = { x: e.clientX, y: e.clientY, id: e.pointerId };
 });
+
 canvas.addEventListener('pointerup', e => {
   if (state.tool === 'orbit') return;
   if (!pointerDownPos || pointerDownPos.id !== e.pointerId) return;
@@ -1190,7 +844,57 @@ canvas.addEventListener('pointerup', e => {
   if (Math.hypot(dx, dy) > TAP_THRESHOLD) return;
   applyEditAt(e.clientX, e.clientY);
 });
+
 canvas.addEventListener('pointercancel', () => { pointerDownPos = null; });
+
+function applyEditAt(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObjects(meshGroup.children, false);
+  const hit = hits.find(h => h.object.userData.voxelKey);
+  if (!hit) return;
+
+  const k = hit.object.userData.voxelKey;
+  if (state.asm) { applyEditAsm(hit, k); return; }
+  const p = parseKey(k);
+  const x = p.x, y = p.y, z = p.z;
+
+  if (state.tool === 'erase' || state.tool === 'paint' || state.tool === 'add') {
+    saveState();
+  }
+
+  if (state.tool === 'erase') {
+    state.grid.delete(k);
+    buildMesh();
+    updateInfo();
+  } else if (state.tool === 'paint') {
+    state.grid.set(k, { r: state.paintColor.r, g: state.paintColor.g, b: state.paintColor.b });
+    buildMesh();
+    updateInfo();
+  } else if (state.tool === 'pick') {
+    const col = state.grid.get(k);
+    if (col) {
+      const hex = '#' + [col.r, col.g, col.b].map(v => v.toString(16).padStart(2, '0')).join('');
+      setPaintColor(hex);
+    }
+  } else if (state.tool === 'add') {
+    const worldN = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+    const n = snapNormal(worldN);
+    const nx = x + n.x, ny = y + n.y, nz = z + n.z;
+    const nk = key(nx, ny, nz);
+    if (state.grid.has(nk)) {
+      historyStack.pop();
+      updateUndoBtn();
+      return;
+    }
+    state.grid.set(nk, { r: state.paintColor.r, g: state.paintColor.g, b: state.paintColor.b });
+    buildMesh();
+    updateInfo();
+  }
+}
 
 function resize() {
   const wrap = document.getElementById('canvas-wrap');
@@ -1205,8 +909,384 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 150));
 if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 resize();
 
-document.addEventListener('gesturestart', e => e.preventDefault());
-document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('gesturestart', e => { e.preventDefault(); });
+document.addEventListener('gesturechange', e => { e.preventDefault(); });
+
+
+// ================= Karakter összerakó (több rész = egy objektum) =================
+const PART_ORDER = ['leg_L','leg_R','body','arm_L','arm_R','hand_L','hand_R','head','hair'];
+const PART_NAMES = { head:'Fej', hair:'Haj', body:'Test', arm_L:'Kar bal', arm_R:'Kar jobb', hand_L:'Kéz bal', hand_R:'Kéz jobb', leg_L:'Láb bal', leg_R:'Láb jobb' };
+const ORIGIN_TABLE = {"female1": {"head": [5, 1, 63], "hair": [5, 1, 63], "body": [3, 1, 37], "arm_L": [1, 1, 35], "arm_R": [16, 1, 35], "hand_L": [1, 2, 27], "hand_R": [16, 2, 28], "leg_L": [4, 1, 1], "leg_R": [11, 1, 1]}, "female2": {"head": [4, 1, 48], "hair": [4, 1, 48], "body": [2, 1, 39], "arm_L": [1, 1, 36], "arm_R": [15, 1, 36], "hand_L": [1, 1, 28], "hand_R": [15, 1, 28], "leg_L": [4, 1, 1], "leg_R": [10, 1, 1]}, "undead": {"head": [5, 1, 63], "body": [4, 1, 38], "arm_L": [1, 1, 44], "arm_R": [16, 1, 34], "hand_L": [1, 3, 41], "hand_R": [16, 2, 27], "leg_L": [4, 2, 1], "leg_R": [10, 1, 1]}, "man": {"head": [6, 2, 62], "body": [2, 1, 38], "arm_L": [1, 3, 33], "arm_R": [15, 3, 33], "hand_L": [1, 4, 26], "hand_R": [15, 4, 26], "leg_L": [4, 3, 1], "leg_R": [10, 3, 1]}};   // fájl-koordináták: [x, mélység(elöl=+), magasság]
+const proj = { chars: {}, cur: null, json: null };
+const $ = id => document.getElementById(id);
+
+function cloneChar(c) {
+  const out = { cx0: c.cx0, cz0: c.cz0, parts: {} };
+  for (const n in c.parts) {
+    const p = c.parts[n];
+    out.parts[n] = { w: p.w, d: p.d, h: p.h, origin: p.origin.slice(), def: p.def.slice(), vox: new Map(Array.from(p.vox, ([k, v]) => [k, { ...v }])) };
+  }
+  return out;
+}
+
+function parseCubRaw(buffer) {
+  const view = new DataView(buffer);
+  if (buffer.byteLength < 12) throw new Error('Túl rövid fájl');
+  const w = view.getUint32(0, true), d = view.getUint32(4, true), h = view.getUint32(8, true);
+  if (w <= 0 || d <= 0 || h <= 0 || 12 + w * d * h * 3 !== buffer.byteLength) throw new Error('Rossz dimenziók: ' + w + '×' + d + '×' + h);
+  const u8 = new Uint8Array(buffer), vox = new Map();
+  let i = 12;
+  for (let z = 0; z < h; z++) for (let y = 0; y < d; y++) for (let x = 0; x < w; x++) {
+    const r = u8[i], g = u8[i+1], b = u8[i+2]; i += 3;
+    if (r === 0 && g === 0 && b === 0) continue;
+    vox.set(key(x, y, z), { r, g, b });
+  }
+  return { w, d, h, vox };
+}
+
+function jsonOrigin(prefix, name) {
+  const j = proj.json && proj.json[prefix] && proj.json[prefix][name];
+  return j && j.origin ? j.origin.slice() : null;
+}
+function tableOrigin(prefix, name) {
+  const t = ORIGIN_TABLE[prefix] && ORIGIN_TABLE[prefix][name];
+  return t ? t.slice() : null;
+}
+// ismeretlen készlet: egyszerű egymásra pakolás (utána igazítható)
+function fallbackOrigins(c) {
+  const P = c.parts, o = {}, g = n => P[n];
+  const legH = Math.max(g('leg_L') ? g('leg_L').h : 0, g('leg_R') ? g('leg_R').h : 0);
+  let lx = 0;
+  if (g('leg_L')) { o.leg_L = [0, 0, 0]; lx = g('leg_L').w; }
+  if (g('leg_R')) o.leg_R = [lx + 1, 0, 0];
+  const bw = g('body') ? g('body').w : 0, bx = Math.max(0, Math.floor((lx * 2 + 1 - bw) / 2));
+  const by0 = Math.max(0, legH - 2);
+  if (g('body')) o.body = [bx, 0, by0];
+  const bodyTop = g('body') ? by0 + g('body').h : legH;
+  const armTopZ = bodyTop - 4;
+  if (g('arm_L')) o.arm_L = [bx - g('arm_L').w, 0, armTopZ - g('arm_L').h];
+  if (g('arm_R')) o.arm_R = [bx + bw, 0, armTopZ - g('arm_R').h];
+  if (g('hand_L') && o.arm_L) o.hand_L = [o.arm_L[0], 0, o.arm_L[2] - g('hand_L').h + 1];
+  if (g('hand_R') && o.arm_R) o.hand_R = [o.arm_R[0], 0, o.arm_R[2] - g('hand_R').h + 1];
+  const hz = g('head') ? bodyTop - 3 : bodyTop;
+  if (g('head')) o.head = [bx + Math.floor((bw - g('head').w) / 2), 0, hz];
+  if (g('hair')) o.hair = o.head ? o.head.slice() : [bx, 0, hz];
+  return o;
+}
+function resolveOrigins(prefix) {
+  const c = proj.chars[prefix], fb = fallbackOrigins(c);
+  for (const n in c.parts) {
+    const p = c.parts[n];
+    if (!p.origin) {
+      const o = jsonOrigin(prefix, n) || tableOrigin(prefix, n) || fb[n] || [0, 0, 0];
+      p.origin = o.slice(); p.def = o.slice();
+    }
+  }
+}
+function applyJsonToChars() {
+  if (!proj.json) return;
+  for (const prefix in proj.chars) for (const n in proj.chars[prefix].parts) {
+    const o = jsonOrigin(prefix, n);
+    if (o) { const p = proj.chars[prefix].parts[n]; p.origin = o.slice(); p.def = o.slice(); }
+  }
+}
+
+function globalBounds(c) {
+  let mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+  for (const n in c.parts) {
+    const p = c.parts[n];
+    for (const k of p.vox.keys()) {
+      const q = parseKey(k);
+      const g = [q.x + p.origin[0], q.y + p.origin[1], q.z + p.origin[2]];
+      for (let i = 0; i < 3; i++) { if (g[i] < mn[i]) mn[i] = g[i]; if (g[i] > mx[i]) mx[i] = g[i]; }
+    }
+  }
+  return mn[0] === Infinity ? null : { mn, mx };
+}
+
+function rebuildFromProject() {
+  const c = proj.chars[proj.cur];
+  if (!c) return;
+  const tintOn = $('chkHairTint').checked;
+  const hx = $('colHair').value;
+  const hc = [parseInt(hx.slice(1,3),16), parseInt(hx.slice(3,5),16), parseInt(hx.slice(5,7),16)];
+  state.grid = new Map();
+  state.owner = new Map();
+  let mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+  for (const n of PART_ORDER) {
+    const p = c.parts[n];
+    if (!p) continue;
+    for (const [k, col0] of p.vox) {
+      const q = parseKey(k);
+      const X = q.x + p.origin[0], D = q.y + p.origin[1], H = q.z + p.origin[2];
+      let col = col0;
+      if (n === 'hair' && tintOn) {
+        const L = Math.min(1, Math.max(0.55, (0.299*col0.r + 0.587*col0.g + 0.114*col0.b) / 255));
+        col = { r: Math.max(1, Math.round(hc[0]*L)), g: Math.round(hc[1]*L), b: Math.round(hc[2]*L) };
+      }
+      const ek = key(X - c.cx0, H, D - c.cz0);
+      state.grid.set(ek, col);
+      state.owner.set(ek, n);
+      if (X < mn[0]) mn[0] = X; if (X > mx[0]) mx[0] = X;
+      if (D < mn[1]) mn[1] = D; if (D > mx[1]) mx[1] = D;
+      if (H < mn[2]) mn[2] = H; if (H > mx[2]) mx[2] = H;
+    }
+  }
+  state.dims = state.grid.size ? { w: mx[0]-mn[0]+1, d: mx[1]-mn[1]+1, h: mx[2]-mn[2]+1 } : { w: 0, d: 0, h: 0 };
+  state.filename = proj.cur + '_assembled.cub';
+  state.asm = true;
+  state.dimSel = $('chkDim').checked ? ($('partSel').value || null) : null;
+  buildMesh();
+  updateInfo();
+  setProjButtons();
+}
+
+function setProjButtons() {
+  const on = !!(proj.cur && proj.chars[proj.cur]);
+  $('btnExportZip').disabled = !on;
+  $('btnExportJson').disabled = !on;
+}
+
+function refreshProjUI() {
+  const cs = $('charSel'), ps = $('partSel');
+  const names = Object.keys(proj.chars);
+  cs.innerHTML = names.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+  if (proj.cur) cs.value = proj.cur;
+  const c = proj.chars[proj.cur];
+  const have = c ? PART_ORDER.filter(n => c.parts[n]) : [];
+  const cur = ps.value;
+  ps.innerHTML = have.map(n => '<option value="' + n + '">' + PART_NAMES[n] + '</option>').join('');
+  if (have.includes(cur)) ps.value = cur;
+  const miss = c ? PART_ORDER.filter(n => !c.parts[n]) : [];
+  $('partsInfo').innerHTML = c
+    ? '<b>' + proj.cur + '</b> — ' + have.map(n => PART_NAMES[n] + ' (' + c.parts[n].vox.size + ')').join(', ') + (miss.length ? '<br>Hiányzik: ' + miss.map(n => PART_NAMES[n]).join(', ') : '<br>Minden rész megvan ✔') + (proj.json ? '<br>parts.json betöltve' : '')
+    : 'Jelöld ki egyszerre a fájlokat (pl. female1_head.cub, female1_body.cub …, parts.json). Az azonos előtagú fájlok egy karakter lesznek.';
+  syncOriginInputs();
+  setProjButtons();
+}
+
+function syncOriginInputs() {
+  const c = proj.chars[proj.cur], n = $('partSel').value;
+  const p = c && c.parts[n];
+  $('orgX').value = p ? p.origin[0] : 0;
+  $('orgY').value = p ? p.origin[1] : 0;
+  $('orgZ').value = p ? p.origin[2] : 0;
+}
+
+let _lastSaveKey = '', _lastSaveT = 0;
+function saveStateThrottled(k) {
+  const now = Date.now();
+  if (k !== _lastSaveKey || now - _lastSaveT > 1500) { saveState(); _lastSaveKey = k; }
+  _lastSaveT = now;
+}
+
+function setOrigin(part, o) {
+  const c = proj.chars[proj.cur], p = c && c.parts[part];
+  if (!p) return;
+  saveStateThrottled('org:' + proj.cur + ':' + part);
+  p.origin = o;
+  syncOriginInputs();
+  rebuildFromProject();
+}
+
+async function loadPartFiles(files) {
+  const touched = new Set();
+  for (const f of files) {
+    const nm = f.name;
+    if (/\.json$/i.test(nm)) {
+      try { proj.json = JSON.parse(await f.text()); applyJsonToChars(); } catch (e) { alert('parts.json hiba: ' + e.message); }
+      continue;
+    }
+    const m = nm.match(/^(.*?)_(head|hair|body|arm_L|arm_R|hand_L|hand_R|leg_L|leg_R)\.cub$/i);
+    if (!m) { alert('Nem felismerhető fájlnév: ' + nm + '\n(várt: előtag_head.cub, _hair, _body, _arm_L, _arm_R, _hand_L, _hand_R, _leg_L, _leg_R)'); continue; }
+    const part = PART_ORDER.find(p => p.toLowerCase() === m[2].toLowerCase());
+    try {
+      const raw = parseCubRaw(await f.arrayBuffer());
+      const prefix = m[1];
+      if (!proj.chars[prefix]) proj.chars[prefix] = { cx0: null, cz0: null, parts: {} };
+      const old = proj.chars[prefix].parts[part];
+      proj.chars[prefix].parts[part] = { w: raw.w, d: raw.d, h: raw.h, vox: raw.vox, origin: old ? old.origin : null, def: old ? old.def : null };
+      touched.add(prefix);
+      proj.cur = prefix;
+    } catch (e) { alert(nm + ': ' + e.message); }
+  }
+  for (const prefix of touched) {
+    resolveOrigins(prefix);
+    const c = proj.chars[prefix];
+    if (c.cx0 === null) {
+      const b = globalBounds(c);
+      if (b) { c.cx0 = b.mn[0] + ((b.mx[0] - b.mn[0] + 1) >> 1); c.cz0 = b.mn[1] + ((b.mx[1] - b.mn[1] + 1) >> 1); }
+      else { c.cx0 = 0; c.cz0 = 0; }
+    }
+  }
+  if (!proj.cur) { refreshProjUI(); return; }
+  historyStack.length = 0; updateUndoBtn();
+  refreshProjUI();
+  rebuildFromProject();
+  fitCamera();
+  closeSidebar();
+}
+
+function applyEditAsm(hit, k) {
+  const c = proj.chars[proj.cur];
+  const p = parseKey(k);
+  const owner = state.owner.get(k);
+  if (!c || !owner) return;
+  const X = p.x + c.cx0, D = p.z + c.cz0, H = p.y;
+  if (state.tool === 'pick') {
+    const col = state.grid.get(k);
+    if (col) setPaintColor('#' + [col.r, col.g, col.b].map(v => v.toString(16).padStart(2, '0')).join(''));
+    $('partSel').value = owner;
+    syncOriginInputs();
+    state.dimSel = $('chkDim').checked ? owner : null;
+    buildMesh();
+    return;
+  }
+  const loc = part => key(X - c.parts[part].origin[0], D - c.parts[part].origin[1], H - c.parts[part].origin[2]);
+  if (state.tool === 'erase') {
+    saveState();
+    c.parts[owner].vox.delete(loc(owner));
+    rebuildFromProject();
+  } else if (state.tool === 'paint') {
+    saveState();
+    c.parts[owner].vox.set(loc(owner), { ...state.paintColor });
+    rebuildFromProject();
+  } else if (state.tool === 'add') {
+    const worldN = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+    const n = snapNormal(worldN);
+    const nk = key(p.x + n.x, p.y + n.y, p.z + n.z);
+    if (state.grid.has(nk)) return;
+    const target = (c.parts[$('partSel').value] ? $('partSel').value : owner);
+    saveState();
+    const nX = X + n.x, nD = D + n.z, nH = H + n.y;
+    const o = c.parts[target].origin;
+    c.parts[target].vox.set(key(nX - o[0], nD - o[1], nH - o[2]), { ...state.paintColor });
+    rebuildFromProject();
+  }
+}
+
+// ---------- export ----------
+function partBounds(p) {
+  let mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+  for (const k of p.vox.keys()) {
+    const q = parseKey(k), a = [q.x, q.y, q.z];
+    for (let i = 0; i < 3; i++) { if (a[i] < mn[i]) mn[i] = a[i]; if (a[i] > mx[i]) mx[i] = a[i]; }
+  }
+  return mn[0] === Infinity ? null : { mn, mx };
+}
+function cubBytes(p, mn, mx) {
+  const w = mx[0]-mn[0]+1, d = mx[1]-mn[1]+1, h = mx[2]-mn[2]+1;
+  const buf = new Uint8Array(12 + w*d*h*3), dv = new DataView(buf.buffer);
+  dv.setUint32(0, w, true); dv.setUint32(4, d, true); dv.setUint32(8, h, true);
+  for (const [k, col] of p.vox) {
+    const q = parseKey(k);
+    const i = 12 + (((q.z-mn[2]) * d + (q.y-mn[1])) * w + (q.x-mn[0])) * 3;
+    buf[i] = col.r; buf[i+1] = col.g; buf[i+2] = col.b;
+  }
+  return { bytes: buf, size: [w, d, h] };
+}
+function buildExport(prefix) {
+  const c = proj.chars[prefix];
+  const names = PART_ORDER.filter(n => c.parts[n] && c.parts[n].vox.size);
+  const files = [], meta = {};
+  // a fej és a haj közös keretben marad (a motor hajigazítása ezt várja)
+  let frame = null;
+  if (names.includes('head') && names.includes('hair')) {
+    const a = c.parts.head, b = c.parts.hair, ba = partBounds(a), bb = partBounds(b);
+    const mn = [0,1,2].map(i => Math.min(ba.mn[i] + a.origin[i], bb.mn[i] + b.origin[i]));
+    const mx = [0,1,2].map(i => Math.max(ba.mx[i] + a.origin[i], bb.mx[i] + b.origin[i]));
+    frame = { mn, mx };
+  }
+  for (const n of names) {
+    const p = c.parts[n];
+    let mn, mx;
+    if (frame && (n === 'head' || n === 'hair')) {
+      mn = [0,1,2].map(i => frame.mn[i] - p.origin[i]); mx = [0,1,2].map(i => frame.mx[i] - p.origin[i]);
+    } else { const b = partBounds(p); mn = b.mn; mx = b.mx; }
+    const r = cubBytes(p, mn, mx);
+    files.push({ name: prefix + '_' + n + '.cub', data: r.bytes });
+    meta[n] = { size: r.size, origin: [0,1,2].map(i => p.origin[i] + mn[i]), voxels: p.vox.size };
+  }
+  const json = JSON.parse(JSON.stringify(proj.json || {}));
+  json[prefix] = meta;
+  return { files, json };
+}
+
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function makeZip(files) {
+  const enc = new TextEncoder(), chunks = [], central = [];
+  let off = 0;
+  for (const f of files) {
+    const nm = enc.encode(f.name), crc = crc32(f.data), sz = f.data.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, 0, true); lh.setUint16(12, 0x21, true); lh.setUint32(14, crc, true); lh.setUint32(18, sz, true); lh.setUint32(22, sz, true);
+    lh.setUint16(26, nm.length, true); lh.setUint16(28, 0, true);
+    chunks.push(new Uint8Array(lh.buffer), nm, f.data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, 0, true); ch.setUint16(14, 0x21, true); ch.setUint32(16, crc, true); ch.setUint32(20, sz, true); ch.setUint32(24, sz, true);
+    ch.setUint16(28, nm.length, true); ch.setUint32(42, off, true);
+    central.push(new Uint8Array(ch.buffer), nm);
+    off += 30 + nm.length + sz;
+  }
+  let csz = 0; for (const c of central) csz += c.length;
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, csz, true); end.setUint32(16, off, true);
+  return new Blob([...chunks, ...central, new Uint8Array(end.buffer)], { type: 'application/zip' });
+}
+function downloadBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+$('btnParts').addEventListener('click', () => $('partsInput').click());
+$('partsInput').addEventListener('change', e => {
+  const fs = Array.from(e.target.files); e.target.value = '';
+  if (fs.length) loadPartFiles(fs);
+});
+$('charSel').addEventListener('change', () => {
+  proj.cur = $('charSel').value; historyStack.length = 0; updateUndoBtn();
+  refreshProjUI(); rebuildFromProject(); fitCamera();
+});
+$('partSel').addEventListener('change', () => { syncOriginInputs(); state.dimSel = $('chkDim').checked ? $('partSel').value : null; buildMesh(); });
+$('chkDim').addEventListener('change', () => { state.dimSel = (state.asm && $('chkDim').checked) ? $('partSel').value : null; buildMesh(); });
+['orgX','orgY','orgZ'].forEach((id, i) => $(id).addEventListener('input', () => {
+  const c = proj.chars[proj.cur], p = c && c.parts[$('partSel').value];
+  if (!p) return;
+  const v = parseInt($(id).value);
+  if (Number.isNaN(v)) return;
+  const o = p.origin.slice(); o[i] = v;
+  setOrigin($('partSel').value, o);
+}));
+document.querySelectorAll('[data-nudge]').forEach(b => b.addEventListener('click', () => {
+  const part = $('partSel').value, c = proj.chars[proj.cur], p = c && c.parts[part];
+  if (!p) return;
+  const [ax, dv] = b.dataset.nudge.split(',').map(Number);
+  const st = Math.max(1, parseInt($('nudgeStep').value) || 1);
+  const o = p.origin.slice(); o[ax] += dv * st;
+  setOrigin(part, o);
+}));
+$('btnResetOrigin').addEventListener('click', () => {
+  const part = $('partSel').value, c = proj.chars[proj.cur], p = c && c.parts[part];
+  if (p) setOrigin(part, p.def.slice());
+});
+$('chkHairTint').addEventListener('change', () => { if (state.asm) rebuildFromProject(); });
+$('colHair').addEventListener('input', () => { if (state.asm && $('chkHairTint').checked) rebuildFromProject(); });
+$('btnExportZip').addEventListener('click', () => {
+  if (!proj.cur) return;
+  const ex = buildExport(proj.cur);
+  const files = ex.files.concat([{ name: 'parts.json', data: new TextEncoder().encode(JSON.stringify(ex.json, null, 1)) }]);
+  downloadBlob(makeZip(files), proj.cur + '_parts.zip');
+});
+$('btnExportJson').addEventListener('click', () => {
+  if (!proj.cur) return;
+  const ex = buildExport(proj.cur);
+  downloadBlob(new Blob([JSON.stringify(ex.json, null, 1)], { type: 'application/json' }), 'parts.json');
+});
 
 function animate() {
   requestAnimationFrame(animate);
